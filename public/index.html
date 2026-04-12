@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multimodal Data Platform</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background: #f0f4f8;
+      }
+      h1 {
+        color: #2d3748;
+      }
+      button {
+        margin-top: 1rem;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        background: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #357abd;
+      }
+      #response {
+        margin-top: 1.5rem;
+        font-size: 1.2rem;
+        color: #2d3748;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Multimodal Data Platform</h1>
+    <button onclick="callApi()">Call Hello API</button>
+    <div id="response"></div>
+
+    <script>
+      async function callApi() {
+        try {
+          const res = await fetch("/.netlify/functions/hello");
+          if (!res.ok) {
+            throw new Error(`Request failed with status ${res.status}`);
+          }
+          const data = await res.json();
+          document.getElementById("response").textContent = data.message;
+        } catch (err) {
+          document.getElementById("response").textContent = `Error: ${err.message}`;
+        }
+      }
+    </script>
+  </body>
+</html>

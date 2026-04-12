@@ -1,0 +1,8 @@
+{
+  "name": "multimodal-data-platform",
+  "version": "1.0.0",
+  "description": "Multimodal Data Platform with Netlify Functions",
+  "scripts": {
+    "dev": "netlify dev"
+  }
+}
