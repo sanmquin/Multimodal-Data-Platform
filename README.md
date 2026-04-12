@@ -2,6 +2,29 @@
 
 A simple TypeScript utility library designed to embed and batch-upsert textual data into a Pinecone vector database. The library batches inserts, deduplicates items (by checking existing IDs first via `fetch`), and gracefully catches errors.
 
+## Cloud API Deployment (Netlify)
+
+The library powers a cloud API deployed to Netlify via a Serverless Function.
+
+### Deployment Setup
+
+1. **Environment Variables**: In your Netlify dashboard, you must set the `PINECONE_API_KEY` environment variable. You can also optionally set `PINECONE_INDEX`.
+2. **Build Configuration**: Ensure that your Netlify build command compiles the TypeScript function (e.g. `npm run build`), or Netlify will automatically build files in `netlify/functions`.
+
+### API Usage
+
+The endpoint is available at `POST /.netlify/functions/embed`.
+
+**Request Body**
+```json
+{
+  "texts": [
+    { "id": "1", "text": "Hello world" }
+  ],
+  "batchSize": 50
+}
+```
+
 ## Installation
 
 ```bash
