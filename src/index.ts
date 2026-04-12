@@ -1,4 +1,4 @@
-import { Index, RecordMetadata, PineconeRecord } from '@pinecone-database/pinecone';
+import { Index, RecordMetadata, PineconeRecord, Pinecone } from '@pinecone-database/pinecone';
 
 export interface TextRecord {
   id: string;
@@ -15,7 +15,9 @@ export interface EmbedStats {
 export interface EmbedOptions<T extends RecordMetadata = RecordMetadata> {
   index: Index<T>;
   texts: TextRecord[];
-  embedder: (texts: string[]) => Promise<number[][]>;
+  embedder?: (texts: string[]) => Promise<number[][]>;
+  pc?: Pinecone;
+  model?: string;
   batchSize?: number;
 }
 
@@ -39,7 +41,7 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 export async function embed<T extends RecordMetadata = RecordMetadata>(
   options: EmbedOptions<T>
 ): Promise<EmbedStats> {
-  const { index, texts, embedder, batchSize = 50 } = options;
+  const { index, texts, embedder, pc, model, batchSize = 50 } = options;
   const startTime = Date.now();
   let writes = 0;
   let errors = 0;
@@ -47,6 +49,26 @@ export async function embed<T extends RecordMetadata = RecordMetadata>(
   if (!texts || texts.length === 0) {
     return { writes, errors, elapsedMs: Date.now() - startTime };
   }
+
+  if (!embedder && (!pc || !model)) {
+    throw new Error('You must provide either an embedder function OR a Pinecone instance (pc) and a model string.');
+  }
+
+  const resolveEmbeddings = async (textsToEmbed: string[]): Promise<number[][]> => {
+    if (embedder) {
+      return await embedder(textsToEmbed);
+    } else {
+      const result = await pc!.inference.embed({
+        model: model!,
+        inputs: textsToEmbed,
+        parameters: {
+          inputType: 'passage',
+          truncate: 'END'
+        }
+      });
+      return result.data.map(d => (d as any).values as number[]);
+    }
+  };
 
   const batches = chunkArray(texts, batchSize);
 
@@ -64,7 +86,7 @@ export async function embed<T extends RecordMetadata = RecordMetadata>(
       if (missingRecords.length > 0) {
         // Embed the missing texts
         const textsToEmbed = missingRecords.map((r) => r.text);
-        const embeddings = await embedder(textsToEmbed);
+        const embeddings = await resolveEmbeddings(textsToEmbed);
 
         if (embeddings.length !== missingRecords.length) {
           throw new Error(`Embedder returned ${embeddings.length} embeddings for ${missingRecords.length} texts.`);

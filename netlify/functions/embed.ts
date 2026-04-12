@@ -31,23 +31,12 @@ export const handler: Handler = async (event, context) => {
     const pc = new Pinecone({ apiKey });
     const index = pc.index(indexName);
 
-    const embedder = async (texts: string[]) => {
-      const embeddings = await pc.inference.embed({
-        model: 'multilingual-e5-large',
-        inputs: texts,
-        parameters: {
-          inputType: 'passage',
-          truncate: 'END'
-        }
-      });
-      return embeddings.data.map(d => (d as any).values as number[]);
-    };
-
     const options: EmbedOptions = {
       index: index as any,
       texts,
       batchSize,
-      embedder
+      pc,
+      model: 'multilingual-e5-large'
     };
 
     const stats = await embed(options);
