@@ -11,7 +11,7 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
-    const { texts, batchSize = 50 } = JSON.parse(event.body || '{}');
+    const { texts, batchSize = 50, indexName = 'default-index' } = JSON.parse(event.body || '{}');
 
     if (!texts || !Array.isArray(texts)) {
       return {
@@ -29,14 +29,18 @@ export const handler: Handler = async (event, context) => {
     }
 
     const pc = new Pinecone({ apiKey });
-    const indexName = process.env.PINECONE_INDEX || 'default-index';
     const index = pc.index(indexName);
 
-    // Dummy embedder for now, replacing with something real might require an OpenAI key.
-    // We will just use random vectors to satisfy e2e testing.
     const embedder = async (texts: string[]) => {
-      // Return 1536 dim random vector assuming openai's default
-      return texts.map(() => Array.from({ length: 1536 }, () => Math.random()));
+      const embeddings = await pc.inference.embed({
+        model: 'multilingual-e5-large',
+        inputs: texts,
+        parameters: {
+          inputType: 'passage',
+          truncate: 'END'
+        }
+      });
+      return embeddings.data.map(d => (d as any).values as number[]);
     };
 
     const options: EmbedOptions = {
