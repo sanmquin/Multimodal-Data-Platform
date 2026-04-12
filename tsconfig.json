@@ -4,12 +4,13 @@
     "module": "CommonJS",
     "declaration": true,
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react",
+    "types": ["node", "react", "react-dom"]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.spec.ts", "test.ts"]
+  "include": ["src/**/*", "netlify/**/*", "test.ts", "test-e2e.ts"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
 }
