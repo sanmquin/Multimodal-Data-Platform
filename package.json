@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/sanmquin/Multimodal-Data-Platform#readme",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@netlify/functions": "^5.2.0",
     "@pinecone-database/pinecone": "^7.2.0",
     "@types/node": "^25.6.0",
@@ -32,11 +33,13 @@
     "@types/react-dom": "^19.2.3",
     "dotenv": "^17.4.2",
     "esbuild": "^0.28.0",
+    "eslint": "^10.2.0",
     "marked": "^18.0.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.1"
   },
   "dependencies": {
     "@google/genai": "^1.49.0",
