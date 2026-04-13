@@ -1,5 +1,7 @@
 import { Index, RecordMetadata, PineconeRecord, Pinecone } from '@pinecone-database/pinecone';
 
+export * from './gemma';
+
 export interface TextRecord {
   id: string;
   text: string;
