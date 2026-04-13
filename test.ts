@@ -51,11 +51,12 @@ async function run() {
     }
   };
 
-  const clusters = await retrieveAndCluster({
+  const { clusters } = await retrieveAndCluster({
     ids: ['1', '2', '3', '4'],
     index: mockClusterIndex,
     namespace: 'test-ns',
-    numClusters: 2
+    numClusters: 2,
+    reduceDimensions: false
   });
 
   console.log(`Generated ${clusters.length} clusters.`);
@@ -83,9 +84,9 @@ async function testNameClusters() {
   };
 
   const clusters = [
-    { texts: ["dog", "cat"] },
-    { texts: ["apple", "banana", "cherry", "date"] }, // Largest
-    { texts: ["red", "blue", "green"] }
+    { texts: ["dog", "cat"], textIds: ["1", "2"] },
+    { texts: ["apple", "banana", "cherry", "date"], textIds: ["3", "4", "5", "6"] }, // Largest
+    { texts: ["red", "blue", "green"], textIds: ["7", "8", "9"] }
   ];
 
   try {

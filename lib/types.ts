@@ -29,8 +29,14 @@ export interface ClusterResult<T extends RecordMetadata = RecordMetadata> {
   records: PineconeRecord<T>[];
 }
 
+export interface RetrieveAndClusterResult<T extends RecordMetadata = RecordMetadata> {
+  clusters: ClusterResult<T>[];
+  pcaModel?: any;
+}
+
 export interface ClusterWithTexts {
   texts: string[];
+  textIds: string[];
 }
 
 export interface NamedCluster extends ClusterWithTexts {
