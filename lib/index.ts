@@ -1,6 +1,8 @@
 import { Index, RecordMetadata, PineconeRecord, Pinecone } from '@pinecone-database/pinecone';
 const { mean } = require('simple-statistics');
 
+export * from './gemma';
+
 export interface TextRecord {
   id: string;
   text: string;

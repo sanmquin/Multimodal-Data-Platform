@@ -19,12 +19,15 @@ Before running tests or a self-hosted instance, you must configure your Pinecone
 
 You need to provide your `PINECONE_API_KEY`. The `PINECONE_INDEX` can be optional depending on how you invoke the library, but it is required if your code looks for it.
 
+For generating content with Gemma models (like Gemma 3 or Gemma 4), you also need to provide `GEMINI_API_KEY`.
+
 ### Local Development / Self-Hosted
 When running your own instance (e.g. standard Node.js server), set the variables in your environment:
 
 ```bash
 export PINECONE_API_KEY="your-api-key"
 export PINECONE_INDEX="your-index-name"
+export GEMINI_API_KEY="your-gemini-api-key"
 ```
 
 ### Cloud Deployment (Netlify)
