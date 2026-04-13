@@ -40,5 +40,6 @@
   },
   "dependencies": {
     "@google/genai": "^1.49.0"
+    "simple-statistics": "^7.8.9"
   }
 }
