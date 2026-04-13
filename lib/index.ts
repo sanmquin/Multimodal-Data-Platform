@@ -4,3 +4,4 @@ export * from './embed';
 export * from './cluster';
 export * from './nameClusters';
 export * from './gemma';
+export * from './pipeline';
