@@ -2,13 +2,28 @@ import { Handler } from '@netlify/functions';
 import { Pinecone } from '@pinecone-database/pinecone';
 import { embed, EmbedOptions } from '../../lib/index';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+};
+
 export const handler: Handler = async (event, context) => {
   console.log(`[embed function] Received ${event.httpMethod} request`);
+
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: ''
+    };
+  }
 
   if (event.httpMethod !== 'POST') {
     console.warn(`[embed function] Invalid method: ${event.httpMethod}`);
     return {
       statusCode: 405,
+      headers: corsHeaders,
       body: 'Method Not Allowed'
     };
   }
@@ -22,6 +37,7 @@ export const handler: Handler = async (event, context) => {
       console.warn(`[embed function] Validation failed: texts array is required. Received: typeof texts = ${typeof texts}`);
       return {
         statusCode: 400,
+        headers: corsHeaders,
         body: JSON.stringify({ error: 'texts array is required' })
       };
     }
@@ -33,6 +49,7 @@ export const handler: Handler = async (event, context) => {
       console.error(`[embed function] Error: PINECONE_API_KEY environment variable is not set`);
       return {
         statusCode: 500,
+        headers: corsHeaders,
         body: JSON.stringify({ error: 'PINECONE_API_KEY environment variable is not set' })
       };
     }
@@ -60,12 +77,14 @@ export const handler: Handler = async (event, context) => {
 
     return {
       statusCode: 200,
+      headers: corsHeaders,
       body: JSON.stringify(stats)
     };
   } catch (error: any) {
     console.error(`[embed function] Uncaught error during processing:`, error);
     return {
       statusCode: 500,
+      headers: corsHeaders,
       body: JSON.stringify({ error: error.message || 'Internal Server Error' })
     };
   }

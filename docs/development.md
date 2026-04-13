@@ -33,6 +33,8 @@ export GEMINI_API_KEY="your-gemini-api-key"
 ### Cloud Deployment (Netlify)
 If you deploy using Netlify Serverless Functions, ensure these environment variables are set inside the Netlify Dashboard -> Site settings -> Environment variables.
 
+By default, the deployed serverless functions include standard CORS headers (e.g. `Access-Control-Allow-Origin: *`). This allows cross-domain frontend applications to make API requests directly to your Netlify endpoints.
+
 ## Running Tests Locally
 
 To run the local test suite (which mocks network calls):
