@@ -51,11 +51,12 @@ async function run() {
     }
   };
 
-  const clusters = await retrieveAndCluster({
+  const { clusters } = await retrieveAndCluster({
     ids: ['1', '2', '3', '4'],
     index: mockClusterIndex,
     namespace: 'test-ns',
-    numClusters: 2
+    numClusters: 2,
+    reduceDimensions: false
   });
 
   console.log(`Generated ${clusters.length} clusters.`);
