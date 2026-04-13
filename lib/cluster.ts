@@ -1,6 +1,24 @@
 import { RecordMetadata, Index, PineconeRecord } from '@pinecone-database/pinecone';
-import { ClusterResult } from './types';
+import { RetrieveAndClusterResult, ClusterResult } from './types';
 import { customKMeans } from './utils';
+import { PCA } from 'ml-pca';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyPCAIfRequested(points: number[][], reduceDimensions: boolean, pcaDimensions: number): { finalPoints: number[][], pcaModelJson: any } {
+  let finalPoints = points;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let pcaModelJson: any = undefined;
+
+  if (reduceDimensions && points.length > 0 && points[0].length > 0) {
+    const pca = new PCA(points);
+    const nComponents = Math.min(pcaDimensions, pca.getExplainedVariance().length);
+    if (nComponents > 0) {
+      finalPoints = pca.predict(points, { nComponents }).to2DArray();
+      pcaModelJson = pca.toJSON();
+    }
+  }
+  return { finalPoints, pcaModelJson };
+}
 
 async function fetchAndFilterRecords<T extends RecordMetadata = RecordMetadata>(
   ids: string[],
@@ -31,25 +49,31 @@ export async function retrieveAndCluster<T extends RecordMetadata = RecordMetada
     index: Index<T>;
     namespace: string;
     numClusters: number;
+    reduceDimensions?: boolean;
+    pcaDimensions?: number;
   }
-): Promise<ClusterResult<T>[]> {
-  const { ids, index, namespace, numClusters } = options;
+): Promise<RetrieveAndClusterResult<T>> {
+  const { ids, index, namespace, numClusters, reduceDimensions = true, pcaDimensions = 20 } = options;
 
   if (!ids || ids.length === 0) {
-    return [];
+    return { clusters: [] };
   }
 
   const { validRecords, points } = await fetchAndFilterRecords(ids, index, namespace);
 
   if (points.length === 0) {
-    return [];
+    return { clusters: [] };
   }
 
   if (points.length < numClusters) {
     throw new Error(`Number of clusters (${numClusters}) cannot be greater than the number of valid points (${points.length}).`);
   }
 
-  const { labels, centroids } = customKMeans(points, numClusters);
+  const reduced = applyPCAIfRequested(points, reduceDimensions, pcaDimensions);
+  const finalPoints = reduced.finalPoints;
+  const pcaModelJson = reduced.pcaModelJson;
+
+  const { labels, centroids } = customKMeans(finalPoints, numClusters);
 
   const clusters: ClusterResult<T>[] = centroids.map((centroid: number[]) => ({
     centroid,
@@ -61,5 +85,5 @@ export async function retrieveAndCluster<T extends RecordMetadata = RecordMetada
     clusters[label].records.push(validRecords[i]);
   }
 
-  return clusters;
+  return { clusters, pcaModel: pcaModelJson };
 }

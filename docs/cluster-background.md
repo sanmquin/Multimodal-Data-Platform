@@ -40,32 +40,44 @@ Please write code to integrate the multimodal data platform cluster background A
 
 # Multimodal Data Platform - Cluster Background Agentic Documentation
 
-### Interface Signatures
+### API Endpoint Signature
 
-```typescript
-export interface TextRecord {
-  id: string; // The unique identifier for the text snippet
-  text: string; // The text content to embed and cluster
-}
+**Endpoint URL**: `POST {{DOMAIN}}/.netlify/functions/cluster-background`
+**Content-Type**: `application/json`
 
-export interface PipelineOptions<T extends RecordMetadata = RecordMetadata> extends EmbedOptions<T> {
-  numClusters: number; // Number of clusters to form
-  namespace?: string;  // Target Pinecone namespace
-  skipEmbed?: boolean; // Skip embedding, only cluster
-}
+#### Request Payload Structure
 
-export interface NamedCluster {
-  texts: string[]; // List of texts within the cluster
-  name: string; // Generated name
-  description: string; // Generated description with examples
-  summary: string; // Generated summary
+```json
+{
+  "texts": [
+    { "id": "string", "text": "string" }
+  ],
+  "numClusters": "number",
+  "batchSize": "number",
+  "indexName": "string",
+  "namespace": "string",
+  "skipEmbed": "boolean"
 }
 ```
 
+#### Inputs
+*   `texts` (**Required**): Array of objects containing text records to embed and cluster.
+    *   `id` (**Required**): The unique identifier for the text snippet.
+    *   `text` (**Required**): The text content to cluster.
+*   `numClusters` (**Required**): The number of clusters to form. Must be less than or equal to the total number of provided text ids found in Pinecone.
+*   `indexName` (*Optional*): Target Pinecone index name. Defaults to a playground index if omitted.
+*   `namespace` (*Optional*): Target Pinecone namespace.
+*   `batchSize` (*Optional*): Size per chunk for processing. Defaults to 50.
+*   `skipEmbed` (*Optional*): Set to `true` to skip embedding generation and just retrieve and cluster existing items from Pinecone. Defaults to `false`.
+
+#### Response
+
+Background functions return an HTTP `202 Accepted` status immediately and process the work asynchronously in the background.
+
 ### Behavioral Guarantees
 
-1. **Sequential Processing:** The process calls `embed` (if not skipped), `retrieveAndCluster`, maps records back to texts, and then uses a LLM to sequentially `nameClusters`.
-2. **Asynchronous Execution:** Netlify background functions return a `202 Accepted` immediately. Check the execution logs of the function for the final `NamedCluster[]` result.
-3. **LLM Integration:** The Gemma model natively generates valid JSON mapping to the `NamedCluster` attributes.
+1. **Sequential Processing:** The background job calls `embed` (if not skipped), retrieves and clusters the vectors, maps records back to texts, and then uses a generative AI model to sequentially name and describe the clusters.
+2. **Asynchronous Execution:** The API returns a `202 Accepted` immediately. You must check the execution logs of the Netlify background function to see the final named cluster results.
+3. **LLM Integration:** The Gemma model automatically generates valid names, descriptions, and summaries for each cluster based on the grouped text snippets.
 ````
 <button id="copy-agent-btn-cluster" class="button is-small is-link mt-2">Copy Instructions</button>
