@@ -1,6 +1,6 @@
 import { Handler } from '@netlify/functions';
 import { Pinecone } from '@pinecone-database/pinecone';
-import { embed, EmbedOptions } from '../../src/index';
+import { embed, EmbedOptions } from '../../lib/index';
 
 export const handler: Handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
