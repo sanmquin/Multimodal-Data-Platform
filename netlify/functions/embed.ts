@@ -40,7 +40,8 @@ export const handler: Handler = async (event, context) => {
       texts,
       batchSize,
       pc,
-      model: 'multilingual-e5-large'
+      model: 'multilingual-e5-large',
+      indexName
     };
 
     const stats = await embed(options);

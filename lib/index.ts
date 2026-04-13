@@ -19,6 +19,9 @@ export interface EmbedOptions<T extends RecordMetadata = RecordMetadata> {
   pc?: Pinecone;
   model?: string;
   batchSize?: number;
+  indexName?: string;
+  cloud?: string;
+  region?: string;
 }
 
 /**
@@ -41,7 +44,7 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 export async function embed<T extends RecordMetadata = RecordMetadata>(
   options: EmbedOptions<T>
 ): Promise<EmbedStats> {
-  const { index, texts, embedder, pc, model, batchSize = 50 } = options;
+  const { index, texts, embedder, pc, model, batchSize = 50, indexName, cloud = 'aws', region = 'us-east-1' } = options;
   const startTime = Date.now();
   let writes = 0;
   let errors = 0;
@@ -77,7 +80,38 @@ export async function embed<T extends RecordMetadata = RecordMetadata>(
       const batchIds = batch.map((r) => r.id);
 
       // Check which IDs already exist
-      const fetchResponse = await index.fetch({ ids: batchIds });
+      let fetchResponse;
+      try {
+        fetchResponse = await index.fetch({ ids: batchIds });
+      } catch (err: any) {
+        if (err.name === 'PineconeNotFoundError') {
+          if (pc && indexName) {
+            const fallbackModel = model || 'multilingual-e5-large';
+            console.log(`Index ${indexName} not found. Provisioning automatically for model ${fallbackModel}...`);
+            try {
+              await pc.createIndexForModel({
+                name: indexName,
+                cloud: cloud,
+                region: region,
+                embed: {
+                  model: fallbackModel,
+                  fieldMap: { text: 'text' }
+                },
+                waitUntilReady: true
+              });
+            } catch (createErr: any) {
+              if (createErr.name !== 'PineconeConflictError') {
+                throw createErr;
+              }
+            }
+            fetchResponse = await index.fetch({ ids: batchIds });
+          } else {
+            throw new Error('PineconeNotFoundError encountered but indexName or Pinecone instance (pc) is missing.');
+          }
+        } else {
+          throw err;
+        }
+      }
       const existingIds = new Set(Object.keys(fetchResponse.records || {}));
 
       // Filter for missing texts
