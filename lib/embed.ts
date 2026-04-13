@@ -34,12 +34,14 @@ async function handleMissingIndex(
 ): Promise<void> {
   if (pc && indexName) {
     const fallbackModel = model || 'multilingual-e5-large';
+    const fallbackCloud = cloud || 'aws';
+    const fallbackRegion = region || 'us-east-1';
     console.log(`Index ${indexName} not found. Provisioning automatically for model ${fallbackModel}...`);
     try {
       await pc.createIndexForModel({
         name: indexName,
-        cloud: cloud,
-        region: region,
+        cloud: fallbackCloud,
+        region: fallbackRegion,
         embed: {
           model: fallbackModel,
           fieldMap: { text: 'text' }
