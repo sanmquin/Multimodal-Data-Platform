@@ -16,7 +16,7 @@ export const handler: Handler = async (event, context) => {
   try {
     const bodyText = event.body || '{}';
     console.log(`[cluster-background function] Parsing request body... length: ${bodyText.length} characters`);
-    const { texts, numClusters = 2, batchSize = 50, indexName = 'default-index', namespace, skipEmbed = false } = JSON.parse(bodyText);
+    const { texts, numClusters = 2, batchSize = 50, indexName = 'default-index', namespace, skipEmbed = false, cloud, region } = JSON.parse(bodyText);
 
     if (!texts || !Array.isArray(texts)) {
       console.warn(`[cluster-background function] Validation failed: texts array is required.`);
@@ -54,7 +54,9 @@ export const handler: Handler = async (event, context) => {
       indexName,
       numClusters,
       namespace,
-      skipEmbed
+      skipEmbed,
+      cloud,
+      region
     };
 
     console.log(`[cluster-background function] Calling processPipeline() logic...`);

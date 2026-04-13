@@ -31,7 +31,7 @@ export const handler: Handler = async (event, context) => {
   try {
     const bodyText = event.body || '{}';
     console.log(`[embed function] Parsing request body... length: ${bodyText.length} characters`);
-    const { texts, batchSize = 50, indexName = 'default-index', namespace } = JSON.parse(bodyText);
+    const { texts, batchSize = 50, indexName = 'default-index', namespace, cloud, region } = JSON.parse(bodyText);
 
     if (!texts || !Array.isArray(texts)) {
       console.warn(`[embed function] Validation failed: texts array is required. Received: typeof texts = ${typeof texts}`);
@@ -68,7 +68,9 @@ export const handler: Handler = async (event, context) => {
       batchSize,
       pc,
       model: 'multilingual-e5-large',
-      indexName
+      indexName,
+      cloud,
+      region
     };
 
     console.log(`[embed function] Calling embed() logic...`);
