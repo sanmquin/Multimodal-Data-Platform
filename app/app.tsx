@@ -16,6 +16,26 @@ const App = () => {
       .catch(console.error);
   }, []);
 
+  useEffect(() => {
+    const btn = document.getElementById('copy-agent-btn');
+    if (btn) {
+      const handleCopy = () => {
+        // In marked, the button gets wrapped in a <p> tag, so its parent is <p> and the previous sibling of <p> is <pre>.
+        const parent = btn.parentElement;
+        const pre = parent ? parent.previousElementSibling : null;
+        if (pre && pre.tagName === 'PRE') {
+          navigator.clipboard.writeText(pre.textContent || '').then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = 'Copied!';
+            setTimeout(() => { btn.innerText = originalText; }, 2000);
+          });
+        }
+      };
+      btn.addEventListener('click', handleCopy);
+      return () => btn.removeEventListener('click', handleCopy);
+    }
+  }, [docsHtml]);
+
   return (
     <div className="container mt-5">
       <h1 className="title">Data Platform</h1>
