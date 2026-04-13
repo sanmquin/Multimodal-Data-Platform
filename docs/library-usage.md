@@ -6,7 +6,7 @@ This library allows you to embed text and store it in Pinecone efficiently. It d
 
 A deployed instance of this library is available as a Netlify function. You can make an HTTP POST request to:
 
-`POST /.netlify/functions/embed`
+`POST https://<YOUR_NETLIFY_DOMAIN>.netlify.app/.netlify/functions/embed`
 
 ### Payload structure
 
@@ -15,7 +15,9 @@ A deployed instance of this library is available as a Netlify function. You can 
   "texts": [
     { "id": "1", "text": "Testing the cloud version." }
   ],
-  "batchSize": 50
+  "batchSize": 50,
+  "indexName": "your-target-index",
+  "namespace": "your-namespace"
 }
 ```
 

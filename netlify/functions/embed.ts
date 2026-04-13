@@ -11,7 +11,7 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
-    const { texts, batchSize = 50, indexName = 'default-index' } = JSON.parse(event.body || '{}');
+    const { texts, batchSize = 50, indexName = 'default-index', namespace } = JSON.parse(event.body || '{}');
 
     if (!texts || !Array.isArray(texts)) {
       return {
@@ -29,7 +29,11 @@ export const handler: Handler = async (event, context) => {
     }
 
     const pc = new Pinecone({ apiKey });
-    const index = pc.index(indexName);
+    let index = pc.index(indexName);
+
+    if (namespace) {
+      index = index.namespace(namespace) as any;
+    }
 
     const options: EmbedOptions = {
       index: index as any,
