@@ -78,6 +78,22 @@ async function run() {
 }
 ```
 
+### Using Gemma Models
+
+You can use the built-in `gemmaGenerate` utility function to interact with Gemma 3 and 4 models natively using the Gemini API. Ensure you have the `GEMINI_API_KEY` environment variable set.
+
+```typescript
+import { gemmaGenerate } from 'multimodal-data-platform';
+
+async function generate() {
+  const response = await gemmaGenerate("Explain vector databases simply.", {
+    model: "gemma-4-26b-a4b-it",
+    systemInstruction: "You are an expert technical teacher."
+  });
+  console.log(response.text);
+}
+```
+
 ## Developer Guide & Deployment
 
 For detailed instructions on setting up your local environment, creating your Pinecone index, or deploying the Cloud API to your own Netlify account, please see our [Development Guide](docs/development.md).
