@@ -11,6 +11,6 @@
     "jsx": "react",
     "types": ["node", "react", "react-dom"]
   },
-  "include": ["src/**/*", "netlify/**/*", "test.ts", "test-e2e.ts"],
+  "include": ["lib/**/*", "app/**/*", "netlify/**/*", "test.ts", "test-e2e.ts"],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }

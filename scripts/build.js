@@ -6,7 +6,7 @@ const { marked } = require('marked');
 async function build() {
   // Build React App
   await esbuild.build({
-    entryPoints: ['src/app.tsx'],
+    entryPoints: ['app/app.tsx'],
     bundle: true,
     outfile: 'public/build/app.js',
     minify: true,

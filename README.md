@@ -1,115 +1,84 @@
 # Multimodal-Data-Platform
 
-A simple TypeScript utility library designed to embed and batch-upsert textual data into a Pinecone vector database. The library batches inserts, deduplicates items (by checking existing IDs first via `fetch`), and gracefully catches errors.
+The Multimodal Data Platform is an intelligent data-ingestion service that takes plain text and seamlessly transforms it into searchable, embedded vectors stored in a Pinecone vector database. Designed with scale and resilience in mind, it handles the heavy lifting of deduplication, batching, and error recovery so you can focus on building intelligent applications.
 
-## Cloud API Deployment (Netlify)
+## Why Use This Platform?
 
-The library powers a cloud API deployed to Netlify via a Serverless Function.
+*   **Automated Deduplication**: It verifies against the database before generating expensive embeddings to save you money and compute.
+*   **Built-in Batching**: Automatically groups your text chunks to abide by rate limits and optimize throughput.
+*   **Error Resiliency**: Gracefully skips over failures in one batch to ensure the rest of your data gets processed.
+*   **Versatile API**: We provide a cloud API ready to handle your texts, or you can leverage our core library directly.
 
-### Deployment Setup
+## Using the Cloud API
 
-1. **Environment Variables**: In your Netlify dashboard, you must set the `PINECONE_API_KEY` environment variable. You can also optionally set `PINECONE_INDEX`.
-2. **Build Configuration**: Ensure that your Netlify build command compiles the TypeScript function (e.g. `npm run build`), or Netlify will automatically build files in `netlify/functions`.
+The easiest way to consume the platform is via our hosted Serverless API. Send your text data in a single POST request and we'll handle the rest.
 
-### API Usage
+### Endpoint
 
-The endpoint is available at `POST /.netlify/functions/embed`.
+`POST /.netlify/functions/embed`
 
-**Request Body**
+### Request Format
+
 ```json
 {
   "texts": [
-    { "id": "1", "text": "Hello world" }
+    { "id": "1", "text": "This is a document about machine learning." },
+    { "id": "2", "text": "Another text to be embedded seamlessly." }
   ],
-  "batchSize": 50
+  "batchSize": 50,
+  "indexName": "your-target-index"
 }
 ```
 
-## Installation
+*Note: The API is authenticated. The deployment environment must be configured with a valid `PINECONE_API_KEY` environment variable.*
+
+---
+
+## Direct Library Usage
+
+If you prefer to integrate the logic directly into your own infrastructure, the platform is also available as an NPM package.
 
 ```bash
 npm install multimodal-data-platform
-```
-
-You'll also need the `@pinecone-database/pinecone` client installed in your project:
-```bash
 npm install @pinecone-database/pinecone
 ```
 
-## Quick Start
-
-The main function is `embed`, which handles chunking texts, checking against Pinecone, and passing the text over to a custom `embedder` function.
-
-### Example with Pinecone Inference
+### Quick Example (Pinecone Inference)
 
 ```typescript
 import { Pinecone } from '@pinecone-database/pinecone';
-import { embed, EmbedOptions } from 'multimodal-data-platform';
+import { embed } from 'multimodal-data-platform';
 
 async function run() {
   const pc = new Pinecone({ apiKey: 'YOUR_PINECONE_API_KEY' });
   const index = pc.index('my-index');
 
-  const textsToEmbed = [
-    { id: '1', text: 'Hello world', metadata: { source: 'user' } },
-    { id: '2', text: 'Embedding texts is fun!', metadata: { source: 'system' } },
-  ];
-
   const stats = await embed({
     index,
-    texts: textsToEmbed,
+    texts: [
+      { id: '1', text: 'Hello world', metadata: { source: 'user' } },
+    ],
     batchSize: 50,
     embedder: async (texts) => {
       // Use Pinecone Inference for embedding
       const embeddings = await pc.inference.embed({
         model: 'multilingual-e5-large',
         inputs: texts,
-        parameters: {
-          inputType: 'passage',
-          truncate: 'END'
-        }
+        parameters: { inputType: 'passage', truncate: 'END' }
       });
-      // Extract numeric values from Pinecone's inference response
       return embeddings.data.map(d => d.values);
     }
   });
 
-  console.log(`Embed completed in ${stats.elapsedMs}ms. Writes: ${stats.writes}, Errors: ${stats.errors}`);
+  console.log(`Embed completed in ${stats.elapsedMs}ms. Writes: ${stats.writes}`);
 }
 ```
 
-### Example with OpenAI
+## Developer Guide & Deployment
 
-```typescript
-import { Pinecone } from '@pinecone-database/pinecone';
-import { OpenAI } from 'openai';
-import { embed } from 'multimodal-data-platform';
+For detailed instructions on setting up your local environment, creating your Pinecone index, or deploying the Cloud API to your own Netlify account, please see our [Development Guide](docs/development.md).
 
-async function run() {
-  const pc = new Pinecone({ apiKey: 'YOUR_PINECONE_API_KEY' });
-  const index = pc.index('my-index');
-  const openai = new OpenAI({ apiKey: 'YOUR_OPENAI_API_KEY' });
-
-  const textsToEmbed = [
-    { id: '1', text: 'Hello world' },
-  ];
-
-  const stats = await embed({
-    index,
-    texts: textsToEmbed,
-    batchSize: 100,
-    embedder: async (texts) => {
-      const response = await openai.embeddings.create({
-        model: 'text-embedding-3-small',
-        input: texts,
-      });
-      return response.data.map(d => d.embedding);
-    }
-  });
-
-  console.log(stats);
-}
-```
+---
 
 ## Agentic Documentation
 
