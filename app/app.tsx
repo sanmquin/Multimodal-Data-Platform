@@ -2,39 +2,50 @@ import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
 const App = () => {
-  const [docsHtml, setDocsHtml] = useState<string>('');
+  const [docsData, setDocsData] = useState<Record<string, string>>({});
+  const [activeDoc, setActiveDoc] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'docs' | 'playground'>('docs');
 
   useEffect(() => {
     fetch('/build/docs.json')
       .then(res => res.json())
       .then(data => {
-        let content = data['library-usage.md'] || 'Failed to load docs';
-        content = content.replace(/\{\{DOMAIN\}\}/g, window.location.origin);
-        setDocsHtml(content);
+        const processedData: Record<string, string> = {};
+        Object.keys(data).forEach(key => {
+          processedData[key] = data[key].replace(/\{\{DOMAIN\}\}/g, window.location.origin);
+        });
+        setDocsData(processedData);
+        if (Object.keys(processedData).length > 0) {
+          setActiveDoc(Object.keys(processedData)[0]);
+        }
       })
       .catch(console.error);
   }, []);
 
   useEffect(() => {
-    const btn = document.getElementById('copy-agent-btn');
-    if (btn) {
+    const btns = document.querySelectorAll('[id^=copy-agent-btn]');
+    const handlers: { btn: Element, handler: EventListener }[] = [];
+
+    btns.forEach(btn => {
       const handleCopy = () => {
-        // In marked, the button gets wrapped in a <p> tag, so its parent is <p> and the previous sibling of <p> is <pre>.
         const parent = btn.parentElement;
         const pre = parent ? parent.previousElementSibling : null;
         if (pre && pre.tagName === 'PRE') {
           navigator.clipboard.writeText(pre.textContent || '').then(() => {
-            const originalText = btn.innerText;
-            btn.innerText = 'Copied!';
-            setTimeout(() => { btn.innerText = originalText; }, 2000);
+            const originalText = (btn as HTMLElement).innerText;
+            (btn as HTMLElement).innerText = 'Copied!';
+            setTimeout(() => { (btn as HTMLElement).innerText = originalText; }, 2000);
           });
         }
       };
       btn.addEventListener('click', handleCopy);
-      return () => btn.removeEventListener('click', handleCopy);
-    }
-  }, [docsHtml]);
+      handlers.push({ btn, handler: handleCopy });
+    });
+
+    return () => {
+      handlers.forEach(({ btn, handler }) => btn.removeEventListener('click', handler));
+    };
+  }, [activeDoc, docsData]);
 
   return (
     <div className="container mt-5">
@@ -52,7 +63,28 @@ const App = () => {
       </div>
 
       {activeTab === 'docs' && (
-        <div className="content" dangerouslySetInnerHTML={{ __html: docsHtml }} />
+        <div className="columns">
+          <div className="column is-one-quarter">
+            <aside className="menu">
+              <p className="menu-label">API Endpoints</p>
+              <ul className="menu-list">
+                {Object.keys(docsData).map(docKey => (
+                  <li key={docKey}>
+                    <a
+                      className={activeDoc === docKey ? 'is-active' : ''}
+                      onClick={() => setActiveDoc(docKey)}
+                    >
+                      {docKey.replace('.md', '')}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          </div>
+          <div className="column">
+            <div className="content" dangerouslySetInnerHTML={{ __html: docsData[activeDoc] || 'Loading docs...' }} />
+          </div>
+        </div>
       )}
 
       {activeTab === 'playground' && <Playground />}
@@ -62,23 +94,34 @@ const App = () => {
 
 const Playground = () => {
   const [inputText, setInputText] = useState('{"id":"1", "text":"Hello cloud!"}');
+  const [numClusters, setNumClusters] = useState('2');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
+  const [endpoint, setEndpoint] = useState<'embed' | 'cluster-background'>('embed');
 
   const handleTest = async () => {
     setLoading(true);
     setResult('');
     try {
       const texts = [JSON.parse(inputText)];
+      const body: any = { texts };
 
-      const response = await fetch('/.netlify/functions/embed', {
+      if (endpoint === 'cluster-background') {
+        body.numClusters = parseInt(numClusters, 10);
+      }
+
+      const response = await fetch(`/.netlify/functions/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ texts })
+        body: JSON.stringify(body)
       });
 
-      const data = await response.json();
-      setResult(JSON.stringify(data, null, 2));
+      if (endpoint === 'cluster-background' && response.status === 202) {
+        setResult('Accepted for background processing. Check Netlify logs.');
+      } else {
+        const data = await response.json();
+        setResult(JSON.stringify(data, null, 2));
+      }
     } catch (e: any) {
       setResult(e.message);
     } finally {
@@ -89,10 +132,20 @@ const Playground = () => {
   return (
     <div className="box">
       <h2 className="subtitle">Playground API Endpoints</h2>
-      <p>This playground tests the cloud version calling the <code>POST /.netlify/functions/embed</code> endpoint.</p>
-      <br/>
       <div className="field">
-        <label className="label">JSON Record</label>
+        <label className="label">Select Endpoint</label>
+        <div className="control">
+          <div className="select">
+            <select value={endpoint} onChange={e => setEndpoint(e.target.value as any)}>
+              <option value="embed">Embed (POST /.netlify/functions/embed)</option>
+              <option value="cluster-background">Cluster Background (POST /.netlify/functions/cluster-background)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="field">
+        <label className="label">JSON Record (Single Text)</label>
         <div className="control">
           <textarea
             className="textarea"
@@ -101,10 +154,25 @@ const Playground = () => {
           />
         </div>
       </div>
+
+      {endpoint === 'cluster-background' && (
+        <div className="field">
+          <label className="label">Number of Clusters</label>
+          <div className="control">
+            <input
+              className="input"
+              type="number"
+              value={numClusters}
+              onChange={e => setNumClusters(e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="field">
         <div className="control">
           <button className={`button is-primary ${loading ? 'is-loading' : ''}`} onClick={handleTest}>
-            Test Embed
+            Test {endpoint}
           </button>
         </div>
       </div>

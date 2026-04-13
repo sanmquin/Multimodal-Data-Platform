@@ -1,10 +1,10 @@
-# Library Usage
+# Embed API
 
-This library allows you to embed text and store it in Pinecone efficiently. It deduplicates automatically and batches the upserts.
+This endpoint allows you to embed text and store it in Pinecone efficiently. It deduplicates automatically and batches the upserts.
 
 ## Cloud API (Netlify Function)
 
-A deployed instance of this library is available as a Netlify function. You can make an HTTP POST request to:
+You can make an HTTP POST request to:
 
 `POST {{DOMAIN}}/.netlify/functions/embed`
 
@@ -30,9 +30,9 @@ The function depends on the `PINECONE_API_KEY` environment variable inside Netli
 If you are an LLM agent or an automated tooling developer, you can quickly write integration code by copying the prompt below and sending it to your agent:
 
 ````text
-Please write code to integrate the multimodal data platform API.
+Please write code to integrate the multimodal data platform embed API.
 
-# Multimodal Data Platform - Agentic Documentation
+# Multimodal Data Platform - Embed Agentic Documentation
 
 If you are an LLM agent or automated tooling trying to reason about how this package works, refer to the following structure and behavior guarantees.
 
