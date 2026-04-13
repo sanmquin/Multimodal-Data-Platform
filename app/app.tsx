@@ -9,7 +9,9 @@ const App = () => {
     fetch('/build/docs.json')
       .then(res => res.json())
       .then(data => {
-        setDocsHtml(data['library-usage.md'] || 'Failed to load docs');
+        let content = data['library-usage.md'] || 'Failed to load docs';
+        content = content.replace(/\{\{DOMAIN\}\}/g, window.location.origin);
+        setDocsHtml(content);
       })
       .catch(console.error);
   }, []);
