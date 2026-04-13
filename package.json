@@ -43,9 +43,8 @@
   },
   "dependencies": {
     "@google/genai": "^1.49.0",
-    "bson": "^7.2.0",
     "ml-pca": "^4.1.1",
-    "mongodb": "^7.1.1",
+    "mongoose": "^9.4.1",
     "simple-statistics": "^7.8.9"
   }
 }

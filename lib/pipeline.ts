@@ -3,8 +3,8 @@ import { EmbedOptions, NamedCluster, ClusterWithTexts } from './types';
 import { embed } from './embed';
 import { retrieveAndCluster } from './cluster';
 import { nameClusters } from './nameClusters';
-import { getMongoClient } from './mongo';
-import * as bson from 'bson';
+import { connectMongoose } from './mongo';
+import mongoose from 'mongoose';
 
 export interface PipelineOptions<T extends RecordMetadata = RecordMetadata> extends EmbedOptions<T> {
   numClusters: number;
@@ -35,34 +35,74 @@ export async function processPipeline<T extends RecordMetadata = RecordMetadata>
 
   const clustersWithTexts: ClusterWithTexts[] = clusters.map((c) => {
     const clusterTexts: string[] = [];
+    const clusterTextIds: string[] = [];
     for (const record of c.records) {
       const text = textMap.get(record.id);
       if (text) {
         clusterTexts.push(text);
+        clusterTextIds.push(record.id);
       }
     }
-    return { texts: clusterTexts };
+    return { texts: clusterTexts, textIds: clusterTextIds };
   });
 
   const namedClusters = await nameClusters(clustersWithTexts);
 
   if (mongoDb && mongoCollection && pcaModel) {
-    try {
-      const client = await getMongoClient();
-      if (client) {
-        const db = client.db(mongoDb);
-        const coll = db.collection(mongoCollection);
-        const pcaModelBson = bson.serialize(pcaModel);
-        await coll.insertOne({
-          pcaModelBson,
-          clusters: namedClusters,
-          createdAt: new Date()
-        });
-      }
-    } catch (err) {
-      console.error('Failed to store PCA model and clusters to Mongo:', err);
-    }
+    await storeToMongo(mongoDb, mongoCollection, pcaModel, namedClusters);
   }
 
   return namedClusters;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function storeToMongo(mongoDb: string, mongoCollection: string, pcaModel: any, namedClusters: NamedCluster[]) {
+  try {
+    const isConnected = await connectMongoose(mongoDb);
+    if (!isConnected) return;
+
+    const pcaSchema = new mongoose.Schema({
+      modelBuffer: Buffer,
+      createdAt: { type: Date, default: Date.now }
+    });
+
+    const clusterSchema = new mongoose.Schema({
+      name: String,
+      description: String,
+      summary: String,
+      createdAt: { type: Date, default: Date.now }
+    });
+
+    const itemSchema = new mongoose.Schema({
+      textId: String,
+      clusterId: mongoose.Schema.Types.ObjectId,
+      createdAt: { type: Date, default: Date.now }
+    });
+
+    const PCAModel = mongoose.models[`${mongoCollection}_pca`] || mongoose.model(`${mongoCollection}_pca`, pcaSchema, `${mongoCollection}_pca`);
+    const ClusterModel = mongoose.models[`${mongoCollection}_clusters`] || mongoose.model(`${mongoCollection}_clusters`, clusterSchema, `${mongoCollection}_clusters`);
+    const ItemModel = mongoose.models[`${mongoCollection}_items`] || mongoose.model(`${mongoCollection}_items`, itemSchema, `${mongoCollection}_items`);
+
+    const pcaString = JSON.stringify(pcaModel);
+    await PCAModel.create({ modelBuffer: Buffer.from(pcaString, 'utf-8') });
+
+    for (const nc of namedClusters) {
+      const clusterDoc = await ClusterModel.create({
+        name: nc.name,
+        description: nc.description,
+        summary: nc.summary
+      });
+
+      const itemDocs = nc.textIds.map(id => ({
+        textId: id,
+        clusterId: clusterDoc._id
+      }));
+
+      if (itemDocs.length > 0) {
+        await ItemModel.insertMany(itemDocs);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to store PCA model and clusters to Mongo:', err);
+  }
 }

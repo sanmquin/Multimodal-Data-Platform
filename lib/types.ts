@@ -36,6 +36,7 @@ export interface RetrieveAndClusterResult<T extends RecordMetadata = RecordMetad
 
 export interface ClusterWithTexts {
   texts: string[];
+  textIds: string[];
 }
 
 export interface NamedCluster extends ClusterWithTexts {
