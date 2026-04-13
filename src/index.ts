@@ -54,6 +54,34 @@ export async function embed<T extends RecordMetadata = RecordMetadata>(
     throw new Error('You must provide either an embedder function OR a Pinecone instance (pc) and a model string.');
   }
 
+  // Auto-create index if missing and pc/model are provided
+  if (pc && model) {
+    const indexName = (index as any).target?.indexName || (index as any).name;
+    if (indexName) {
+      try {
+        await pc.describeIndex(indexName);
+      } catch (e: any) {
+        if (e.name === 'PineconeNotFoundError') {
+          // Attempt to create the index
+          await pc.createIndexForModel({
+            name: indexName,
+            cloud: 'aws',
+            region: 'us-east-1',
+            embed: {
+              model: model,
+              metric: 'cosine',
+              fieldMap: { text: 'text' }
+            },
+            // Wait until the index is fully provisioned
+            waitUntilReady: true
+          } as any);
+        } else {
+          throw e; // rethrow other errors
+        }
+      }
+    }
+  }
+
   const resolveEmbeddings = async (textsToEmbed: string[]): Promise<number[][]> => {
     if (embedder) {
       return await embedder(textsToEmbed);
