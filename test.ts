@@ -1,4 +1,5 @@
-import { embed, EmbedOptions, retrieveAndCluster } from './lib/index';
+import { embed, EmbedOptions, retrieveAndCluster, nameClusters } from './lib/index';
+import * as gemma from './lib/gemma';
 
 async function run() {
   const mockIndex: any = {
@@ -65,3 +66,48 @@ async function run() {
 }
 
 run().catch(console.error);
+
+async function testNameClusters() {
+  console.log('\n--- Testing nameClusters ---');
+
+  // Mock gemmaGenerate
+  const originalGemmaGenerate = gemma.gemmaGenerate;
+  (gemma as any).gemmaGenerate = async (prompt: string, options: any) => {
+    return {
+      text: JSON.stringify({
+        name: "Fruit Cluster",
+        description: "A cluster of fruits. Examples include apple and banana.",
+        summary: "Various fruits."
+      })
+    };
+  };
+
+  const clusters = [
+    { texts: ["dog", "cat"] },
+    { texts: ["apple", "banana", "cherry", "date"] }, // Largest
+    { texts: ["red", "blue", "green"] }
+  ];
+
+  try {
+    const results = await nameClusters(clusters);
+
+    // Check if sorted properly (apple first, then colors, then pets)
+    if (results[0].texts.length !== 4) throw new Error("Sorting failed: 1st cluster");
+    if (results[1].texts.length !== 3) throw new Error("Sorting failed: 2nd cluster");
+    if (results[2].texts.length !== 2) throw new Error("Sorting failed: 3rd cluster");
+
+    // Check if fields were added
+    if (!results[0].name || !results[0].description || !results[0].summary) {
+      throw new Error("Missing generated fields.");
+    }
+
+    console.log("nameClusters test passed.");
+  } catch (err) {
+    console.error("nameClusters test failed:", err);
+  } finally {
+    // Restore mock
+    (gemma as any).gemmaGenerate = originalGemmaGenerate;
+  }
+}
+
+testNameClusters().catch(console.error);
