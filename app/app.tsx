@@ -68,7 +68,20 @@ const App = () => {
             <aside className="menu">
               <p className="menu-label">API Endpoints</p>
               <ul className="menu-list">
-                {Object.keys(docsData).map(docKey => (
+                {Object.keys(docsData).filter(key => key !== 'development.md').map(docKey => (
+                  <li key={docKey}>
+                    <a
+                      className={activeDoc === docKey ? 'is-active' : ''}
+                      onClick={() => setActiveDoc(docKey)}
+                    >
+                      {docKey.replace('.md', '')}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <p className="menu-label">Development Setup</p>
+              <ul className="menu-list">
+                {Object.keys(docsData).filter(key => key === 'development.md').map(docKey => (
                   <li key={docKey}>
                     <a
                       className={activeDoc === docKey ? 'is-active' : ''}

@@ -34,39 +34,50 @@ Please write code to integrate the multimodal data platform embed API.
 
 # Multimodal Data Platform - Embed Agentic Documentation
 
-If you are an LLM agent or automated tooling trying to reason about how this package works, refer to the following structure and behavior guarantees.
+If you are an LLM agent or automated tooling trying to reason about how to call this API endpoint, refer to the following structure and behavior guarantees.
 
-### Interface Signatures
+### API Endpoint Signature
 
-```typescript
-import { Index, RecordMetadata } from '@pinecone-database/pinecone';
+**Endpoint URL**: `POST {{DOMAIN}}/.netlify/functions/embed`
+**Content-Type**: `application/json`
 
-export interface TextRecord {
-  id: string; // The unique identifier for the text snippet
-  text: string; // The text content to embed
-  metadata?: RecordMetadata; // Optional Pinecone-compatible metadata
+#### Request Payload Structure
+
+```json
+{
+  "texts": [
+    { "id": "string", "text": "string", "metadata": {} }
+  ],
+  "batchSize": "number",
+  "indexName": "string",
+  "namespace": "string"
 }
+```
 
-export interface EmbedStats {
-  writes: number;    // Number of records successfully inserted into Pinecone
-  errors: number;    // Number of records that failed during processing
-  elapsedMs: number; // Total processing time in milliseconds
-}
+#### Inputs
+*   `texts` (**Required**): Array of objects containing text records to embed.
+    *   `id` (**Required**): The unique identifier for the text snippet.
+    *   `text` (**Required**): The text content to embed.
+    *   `metadata` (*Optional*): Additional key-value pairs to store with the vector.
+*   `indexName` (*Optional*): Target Pinecone index name. Defaults to a playground index if omitted.
+*   `namespace` (*Optional*): Target Pinecone namespace.
+*   `batchSize` (*Optional*): Size per chunk for processing. Defaults to 50.
 
-export interface EmbedOptions<T extends RecordMetadata = RecordMetadata> {
-  index: Index<T>;  // Instance of the configured Pinecone Index target
-  texts: TextRecord[]; // List of texts to check and embed
-  embedder: (texts: string[]) => Promise<number[][]>; // External provider callback generating vectors
-  batchSize?: number; // Size per chunk (defaults to 50)
+#### Response Payload Structure
+
+```json
+{
+  "writes": "number",
+  "errors": "number",
+  "elapsedMs": "number"
 }
 ```
 
 ### Behavioral Guarantees
 
-1. **Deduplication:** For each chunk, the library calls `index.fetch(ids)`. Items that already exist in the index are skipped to prevent redundant embedding computation and token usage.
-2. **Metadata Injection:** The `text` field from the `TextRecord` is automatically injected into the inserted vector's `metadata`. Thus, the inserted metadata object becomes `{ ...metadata, text }`.
-3. **Chunking Mechanism:** The function batches incoming objects arrays according to `batchSize` (default: 50).
-4. **Error Handling:** If an error occurs in a given batch (e.g., embedding provider timeout, Pinecone API 502), the error is caught, `stats.errors` increments by the size of that batch, and the process continues onto the next batch without halting.
-5. **Generics:** By passing `Index<YourType>`, you preserve Pinecone generic type assertions in case you require strict type checking for existing metadata structure mappings.
+1. **Deduplication:** The API automatically checks the index for existing `id`s. Items that already exist are skipped to prevent redundant embedding computation.
+2. **Metadata Injection:** The `text` field from the `TextRecord` is automatically injected into the inserted vector's `metadata`.
+3. **Batching:** The function processes incoming arrays in chunks according to `batchSize`.
+4. **Error Handling:** If an error occurs in a given batch, the error is caught, the response `errors` count increments by the size of that batch, and the process continues to the next batch without failing the entire request.
 ````
 <button id="copy-agent-btn" class="button is-small is-link mt-2">Copy Instructions</button>
