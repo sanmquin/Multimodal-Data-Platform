@@ -15,7 +15,7 @@ The easiest way to consume the platform is via our hosted Serverless API. Send y
 
 ### Endpoint
 
-`POST https://<YOUR_NETLIFY_DOMAIN>.netlify.app/.netlify/functions/embed`
+`POST /.netlify/functions/embed`
 
 ### Request Format
 
@@ -44,45 +44,9 @@ npm install multimodal-data-platform
 npm install @pinecone-database/pinecone
 ```
 
-### Sample Code & Agent Prompt
-
-Copy the block below and provide it to your LLM or automated agent. It includes the sample integration code and the necessary context (interfaces and behavioral guarantees) for the agent to reason about the library effectively.
+### Quick Example (Pinecone Inference)
 
 ```typescript
-/**
- * MULTIMODAL DATA PLATFORM - AGENTIC DOCUMENTATION
- *
- * Interface Signatures:
- *
- * import { Index, RecordMetadata } from '@pinecone-database/pinecone';
- *
- * export interface TextRecord {
- *   id: string; // The unique identifier for the text snippet
- *   text: string; // The text content to embed
- *   metadata?: RecordMetadata; // Optional Pinecone-compatible metadata
- * }
- *
- * export interface EmbedStats {
- *   writes: number;    // Number of records successfully inserted into Pinecone
- *   errors: number;    // Number of records that failed during processing
- *   elapsedMs: number; // Total processing time in milliseconds
- * }
- *
- * export interface EmbedOptions<T extends RecordMetadata = RecordMetadata> {
- *   index: Index<T>;  // Instance of the configured Pinecone Index target
- *   texts: TextRecord[]; // List of texts to check and embed
- *   embedder: (texts: string[]) => Promise<number[][]>; // External provider callback generating vectors
- *   batchSize?: number; // Size per chunk (defaults to 50)
- * }
- *
- * Behavioral Guarantees:
- * 1. Deduplication: For each chunk, the library calls `index.fetch(ids)`. Items that already exist in the index are skipped to prevent redundant embedding computation and token usage.
- * 2. Metadata Injection: The `text` field from the `TextRecord` is automatically injected into the inserted vector's `metadata`. Thus, the inserted metadata object becomes `{ ...metadata, text }`.
- * 3. Chunking Mechanism: The function batches incoming objects arrays according to `batchSize` (default: 50).
- * 4. Error Handling: If an error occurs in a given batch (e.g., embedding provider timeout, Pinecone API 502), the error is caught, `stats.errors` increments by the size of that batch, and the process continues onto the next batch without halting.
- * 5. Generics: By passing `Index<YourType>`, you preserve Pinecone generic type assertions in case you require strict type checking for existing metadata structure mappings.
- */
-
 import { Pinecone } from '@pinecone-database/pinecone';
 import { embed } from 'multimodal-data-platform';
 

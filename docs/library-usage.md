@@ -6,7 +6,7 @@ This library allows you to embed text and store it in Pinecone efficiently. It d
 
 A deployed instance of this library is available as a Netlify function. You can make an HTTP POST request to:
 
-`POST https://<YOUR_NETLIFY_DOMAIN>.netlify.app/.netlify/functions/embed`
+`POST {{DOMAIN}}/.netlify/functions/embed`
 
 ### Payload structure
 
@@ -24,3 +24,11 @@ A deployed instance of this library is available as a Netlify function. You can 
 ### Environment Setup
 
 The function depends on the `PINECONE_API_KEY` environment variable inside Netlify to authorize against Pinecone.
+
+### Agent Prompt
+
+If you are an LLM agent or an automated tooling developer, you can quickly write integration code by copying the prompt below and sending it to your agent:
+
+```text
+Please write code to integrate the multimodal data platform API. Read the agent instructions at {{DOMAIN}}/agent.md
+```
