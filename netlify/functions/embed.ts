@@ -1,6 +1,6 @@
 import { Handler } from '@netlify/functions';
 import { Pinecone } from '@pinecone-database/pinecone';
-import { embed, EmbedOptions } from '../../src/index';
+import { embed, EmbedOptions } from '../../lib/index';
 
 export const handler: Handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
@@ -11,7 +11,7 @@ export const handler: Handler = async (event, context) => {
   }
 
   try {
-    const { texts, batchSize = 50, indexName = 'default-index' } = JSON.parse(event.body || '{}');
+    const { texts, batchSize = 50, indexName = 'default-index', namespace } = JSON.parse(event.body || '{}');
 
     if (!texts || !Array.isArray(texts)) {
       return {
@@ -29,14 +29,19 @@ export const handler: Handler = async (event, context) => {
     }
 
     const pc = new Pinecone({ apiKey });
-    const index = pc.index(indexName);
+    let index = pc.index(indexName);
+
+    if (namespace) {
+      index = index.namespace(namespace) as any;
+    }
 
     const options: EmbedOptions = {
       index: index as any,
       texts,
       batchSize,
       pc,
-      model: 'multilingual-e5-large'
+      model: 'multilingual-e5-large',
+      indexName
     };
 
     const stats = await embed(options);

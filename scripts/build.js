@@ -6,7 +6,7 @@ const { marked } = require('marked');
 async function build() {
   // Build React App
   await esbuild.build({
-    entryPoints: ['src/app.tsx'],
+    entryPoints: ['app/app.tsx'],
     bundle: true,
     outfile: 'public/build/app.js',
     minify: true,
@@ -26,6 +26,12 @@ async function build() {
 
   // Write out as JSON so frontend can easily load it
   fs.writeFileSync('public/build/docs.json', JSON.stringify(docsData));
+
+  // Copy agent.md directly to public
+  if (fs.existsSync(path.join(docsDir, 'agent.md'))) {
+    fs.copyFileSync(path.join(docsDir, 'agent.md'), 'public/agent.md');
+  }
+
   console.log('Build completed!');
 }
 

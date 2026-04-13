@@ -1,4 +1,4 @@
-import { embed, EmbedOptions } from './src/index';
+import { embed, EmbedOptions } from './lib/index';
 
 async function run() {
   const mockIndex: any = {

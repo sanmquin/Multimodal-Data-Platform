@@ -16,7 +16,9 @@ async function run() {
       texts: [
         { id: '1', text: 'e2e test item 1' },
         { id: '2', text: 'e2e test item 2' }
-      ]
+      ],
+      indexName: 'test-index',
+      namespace: 'test-namespace'
     })
   };
 
