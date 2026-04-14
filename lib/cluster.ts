@@ -25,12 +25,15 @@ async function fetchAndFilterRecords<T extends RecordMetadata = RecordMetadata>(
   index: Index<T>,
   namespace: string
 ): Promise<{ validRecords: PineconeRecord<T>[], points: number[][] }> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const fetchResponse = await index.namespace(namespace).fetch(ids as any);
-  const fetchedRecords = fetchResponse.records || {};
-
   const validRecords: PineconeRecord<T>[] = [];
   const points: number[][] = [];
+
+  if (!ids || ids.length === 0) {
+    return { validRecords, points };
+  }
+
+  const fetchResponse = await index.namespace(namespace).fetch({ ids });
+  const fetchedRecords = fetchResponse.records || {};
 
   for (const id of ids) {
     const record = fetchedRecords[id];
