@@ -129,6 +129,11 @@ const Playground = () => {
         body: JSON.stringify(body)
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status} - ${errorText}`);
+      }
+
       if (endpoint === 'cluster-background' && response.status === 202) {
         setResult('Accepted for background processing. Check Netlify logs.');
       } else {
@@ -136,6 +141,7 @@ const Playground = () => {
         setResult(JSON.stringify(data, null, 2));
       }
     } catch (e: any) {
+      console.error("Fetch Error:", e);
       setResult(e.message);
     } finally {
       setLoading(false);
