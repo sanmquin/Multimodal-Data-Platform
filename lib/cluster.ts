@@ -1,5 +1,5 @@
 import { RecordMetadata, Index, PineconeRecord } from '@pinecone-database/pinecone';
-import { RetrieveAndClusterResult, ClusterResult } from './types';
+import { RetrieveAndClusterResult, ClusterResult, RetrieveAndClusterOptions } from './types';
 import { customKMeans } from './utils';
 import { PCA } from 'ml-pca';
 
@@ -44,14 +44,7 @@ async function fetchAndFilterRecords<T extends RecordMetadata = RecordMetadata>(
 }
 
 export async function retrieveAndCluster<T extends RecordMetadata = RecordMetadata>(
-  options: {
-    ids: string[];
-    index: Index<T>;
-    namespace: string;
-    numClusters: number;
-    reduceDimensions?: boolean;
-    pcaDimensions?: number;
-  }
+  options: RetrieveAndClusterOptions<T>
 ): Promise<RetrieveAndClusterResult<T>> {
   const { ids, index, namespace, numClusters, reduceDimensions = true, pcaDimensions = 20 } = options;
 

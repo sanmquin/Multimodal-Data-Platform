@@ -20,7 +20,9 @@ Background functions return a `202 Accepted` status immediately and process the 
   "batchSize": 50,
   "indexName": "your-target-index",
   "namespace": "your-namespace",
-  "skipEmbed": false
+  "skipEmbed": false,
+  "mongoDb": "mongodb://localhost:27017/my_db",
+  "mongoCollection": "my_collection_prefix"
 }
 ```
 
@@ -56,7 +58,9 @@ Please write code to integrate the multimodal data platform cluster background A
   "batchSize": "number",
   "indexName": "string",
   "namespace": "string",
-  "skipEmbed": "boolean"
+  "skipEmbed": "boolean",
+  "mongoDb": "string",
+  "mongoCollection": "string"
 }
 ```
 
@@ -69,6 +73,8 @@ Please write code to integrate the multimodal data platform cluster background A
 *   `namespace` (*Optional*): Target Pinecone namespace.
 *   `batchSize` (*Optional*): Size per chunk for processing. Defaults to 50.
 *   `skipEmbed` (*Optional*): Set to `true` to skip embedding generation and just retrieve and cluster existing items from Pinecone. Defaults to `false`.
+*   `mongoDb` (*Optional*): The connection string to a MongoDB database where PCA models and cluster assignments should be saved.
+*   `mongoCollection` (*Optional*): The prefix for the MongoDB collections to save into (e.g. `[prefix]_pca`, `[prefix]_clusters`, `[prefix]_items`). Required if `mongoDb` is specified.
 
 #### Response
 
