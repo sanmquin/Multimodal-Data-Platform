@@ -2,13 +2,28 @@ import { Handler } from '@netlify/functions';
 import { Pinecone } from '@pinecone-database/pinecone';
 import { embedAndCluster, EmbedAndClusterOptions } from '../../lib/index';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+};
+
 export const handler: Handler = async (event, context) => {
   console.log(`[cluster-background function] Received ${event.httpMethod} request`);
+
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: ''
+    };
+  }
 
   if (event.httpMethod !== 'POST') {
     console.warn(`[cluster-background function] Invalid method: ${event.httpMethod}`);
     return {
       statusCode: 405,
+      headers: corsHeaders,
       body: 'Method Not Allowed'
     };
   }
@@ -24,6 +39,7 @@ export const handler: Handler = async (event, context) => {
       console.warn(`[cluster-background function] Validation failed: texts array is required.`);
       return {
         statusCode: 400,
+        headers: corsHeaders,
         body: JSON.stringify({ error: 'texts array is required' })
       };
     }
@@ -35,6 +51,7 @@ export const handler: Handler = async (event, context) => {
       console.error(`[cluster-background function] Error: PINECONE_API_KEY environment variable is not set`);
       return {
         statusCode: 500,
+        headers: corsHeaders,
         body: JSON.stringify({ error: 'PINECONE_API_KEY environment variable is not set' })
       };
     }
@@ -69,12 +86,14 @@ export const handler: Handler = async (event, context) => {
 
     return {
       statusCode: 202,
+      headers: corsHeaders,
       body: 'Accepted'
     };
   } catch (error: any) {
     console.error(`[cluster-background function] Uncaught error during processing:`, error);
     return {
       statusCode: 500,
+      headers: corsHeaders,
       body: JSON.stringify({ error: error.message || 'Internal Server Error' })
     };
   }
