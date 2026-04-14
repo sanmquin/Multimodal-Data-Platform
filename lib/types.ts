@@ -34,6 +34,15 @@ export interface RetrieveAndClusterResult<T extends RecordMetadata = RecordMetad
   pcaModel?: any;
 }
 
+export interface RetrieveAndClusterOptions<T extends RecordMetadata = RecordMetadata> {
+  ids: string[];
+  index: Index<T>;
+  namespace: string;
+  numClusters: number;
+  reduceDimensions?: boolean;
+  pcaDimensions?: number;
+}
+
 export interface ClusterWithTexts {
   texts: string[];
   textIds: string[];
