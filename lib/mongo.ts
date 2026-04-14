@@ -3,6 +3,11 @@ import mongoose from 'mongoose';
 let isConnected = false;
 
 export async function connectMongoose(mongoDb: string): Promise<boolean> {
+  if (!mongoDb || typeof mongoDb !== 'string' || /[/\\. "$*<>:|?]/.test(mongoDb)) {
+    console.error('Invalid MongoDB database name provided.');
+    return false;
+  }
+
   const uri = process.env.MONGO_URI;
   if (!uri) {
     return false;
