@@ -1,6 +1,6 @@
 import { Handler } from '@netlify/functions';
 import { Pinecone } from '@pinecone-database/pinecone';
-import { processPipeline, PipelineOptions } from '../../lib/index';
+import { embedAndCluster, EmbedAndClusterOptions } from '../../lib/index';
 
 export const handler: Handler = async (event, context) => {
   console.log(`[cluster-background function] Received ${event.httpMethod} request`);
@@ -17,7 +17,7 @@ export const handler: Handler = async (event, context) => {
     const bodyText = event.body || '{}';
     console.log(`[cluster-background function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts, numClusters = 2, batchSize = 50, namespace, skipEmbed = false, cloud, region } = parsedBody;
+    const { texts, numClusters = 2, batchSize = 50, namespace, skipEmbed = false, cloud, region, mongoDb, mongoCollection } = parsedBody;
     const indexName = (parsedBody.indexName || 'default-index').toLowerCase();
 
     if (!texts || !Array.isArray(texts)) {
@@ -47,7 +47,7 @@ export const handler: Handler = async (event, context) => {
       index = index.namespace(namespace) as any;
     }
 
-    const options: PipelineOptions = {
+    const options: EmbedAndClusterOptions = {
       index: index as any,
       texts,
       batchSize,
@@ -58,12 +58,14 @@ export const handler: Handler = async (event, context) => {
       namespace,
       skipEmbed,
       cloud,
-      region
+      region,
+      mongoDb,
+      mongoCollection
     };
 
-    console.log(`[cluster-background function] Calling processPipeline() logic...`);
-    const namedClusters = await processPipeline(options);
-    console.log(`[cluster-background function] Pipeline completed successfully. Clusters: ${JSON.stringify(namedClusters, null, 2)}`);
+    console.log(`[cluster-background function] Calling embedAndCluster() logic...`);
+    const namedClusters = await embedAndCluster(options);
+    console.log(`[cluster-background function] embedAndCluster completed successfully. Clusters: ${JSON.stringify(namedClusters, null, 2)}`);
 
     return {
       statusCode: 202,

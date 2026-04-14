@@ -6,7 +6,7 @@ import { nameClusters } from './nameClusters';
 import { connectMongoose } from './mongo';
 import mongoose from 'mongoose';
 
-export interface PipelineOptions<T extends RecordMetadata = RecordMetadata> extends EmbedOptions<T> {
+export interface EmbedAndClusterOptions<T extends RecordMetadata = RecordMetadata> extends EmbedOptions<T> {
   numClusters: number;
   namespace?: string;
   skipEmbed?: boolean;
@@ -16,8 +16,8 @@ export interface PipelineOptions<T extends RecordMetadata = RecordMetadata> exte
   mongoCollection?: string;
 }
 
-export async function processPipeline<T extends RecordMetadata = RecordMetadata>(
-  options: PipelineOptions<T>
+export async function embedAndCluster<T extends RecordMetadata = RecordMetadata>(
+  options: EmbedAndClusterOptions<T>
 ): Promise<NamedCluster[]> {
   const { texts, index, numClusters, namespace = '', skipEmbed = false, reduceDimensions, pcaDimensions, mongoDb, mongoCollection, ...embedOpts } = options;
 
