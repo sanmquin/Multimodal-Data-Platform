@@ -8,7 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
-export const handler: Handler = async (event, context) => {
+export const handler: Handler = async (event) => {
   console.log(`[cluster-background function] Received ${event.httpMethod} request`);
 
   if (event.httpMethod === 'OPTIONS') {
@@ -61,10 +61,12 @@ export const handler: Handler = async (event, context) => {
     let index = pc.index(indexName);
 
     if (namespace) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       index = index.namespace(namespace) as any;
     }
 
     const options: EmbedAndClusterOptions = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       index: index as any,
       texts,
       batchSize,
@@ -81,20 +83,21 @@ export const handler: Handler = async (event, context) => {
     };
 
     console.log(`[cluster-background function] Calling embedAndCluster() logic...`);
-    const namedClusters = await embedAndCluster(options);
-    console.log(`[cluster-background function] embedAndCluster completed successfully. Clusters: ${JSON.stringify(namedClusters, null, 2)}`);
+    await embedAndCluster(options);
+    console.log(`[cluster-background function] embedAndCluster completed successfully. Processed ${texts.length} texts into ${numClusters} clusters.`);
 
     return {
       statusCode: 202,
       headers: corsHeaders,
       body: 'Accepted'
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     console.error(`[cluster-background function] Uncaught error during processing:`, error);
     return {
       statusCode: 500,
       headers: corsHeaders,
-      body: JSON.stringify({ error: error.message || 'Internal Server Error' })
+      body: JSON.stringify({ error: err.message || 'Internal Server Error' })
     };
   }
 };
