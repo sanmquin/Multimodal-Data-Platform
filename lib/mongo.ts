@@ -7,6 +7,7 @@ export async function connectMongoose(mongoDb: string): Promise<boolean> {
     console.error('Invalid MongoDB database name provided.');
     return false;
   }
+  mongoDb = mongoDb.toLowerCase();
 
   const uri = process.env.MONGO_URI;
   if (!uri) {

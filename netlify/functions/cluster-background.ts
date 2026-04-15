@@ -32,8 +32,10 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[cluster-background function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts, numClusters = 2, batchSize = 50, namespace, skipEmbed = false, cloud, region, mongoDb, mongoCollection } = parsedBody;
+    const { texts, numClusters = 2, batchSize = 50, namespace, skipEmbed = false, cloud, region } = parsedBody;
     const indexName = (parsedBody.indexName || 'default-index').toLowerCase();
+    const mongoDb = parsedBody.mongoDb?.toLowerCase();
+    const mongoCollection = parsedBody.mongoCollection;
 
     if (!texts || !Array.isArray(texts)) {
       console.warn(`[cluster-background function] Validation failed: texts array is required.`);
