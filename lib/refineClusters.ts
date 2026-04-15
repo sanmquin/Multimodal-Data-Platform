@@ -11,6 +11,7 @@ function getMongooseModels(mongoCollection: string) {
     name: String,
     description: String,
     summary: String,
+    centroid: [Number],
     version: { type: Number, default: 1 },
     createdAt: { type: Date, default: Date.now }
   });
@@ -18,6 +19,7 @@ function getMongooseModels(mongoCollection: string) {
   const itemSchema = new mongoose.Schema({
     textId: String,
     clusterId: mongoose.Schema.Types.ObjectId,
+    reducedPoints: [Number],
     createdAt: { type: Date, default: Date.now }
   });
 
@@ -28,42 +30,45 @@ function getMongooseModels(mongoCollection: string) {
 }
 
 async function getRepresentativeTexts<T extends RecordMetadata>(
-  textIds: string[],
+  items: { textId: string, reducedPoints?: number[] }[],
   index: Index<T>,
-  namespace: string
+  namespace: string,
+  centroid?: number[]
 ): Promise<string[]> {
-  if (!textIds || textIds.length === 0) return [];
-  const limit = Math.min(textIds.length, 1000);
-  const idsToFetch = textIds.slice(0, limit);
-  const fetchResponse = await index.namespace(namespace).fetch({ ids: idsToFetch });
-  const records = fetchResponse.records || {};
+  if (!items || items.length === 0) return [];
 
-  const validRecords: {text: string, id: string}[] = [];
-  const points: number[][] = [];
-  for (const id of idsToFetch) {
-    const record = records[id];
-    if (record && record.values && record.values.length > 0 && record.metadata && typeof record.metadata.text === 'string') {
-      validRecords.push({ text: record.metadata.text as string, id });
-      points.push(record.values);
+  const hasAllReducedPoints = items.every(i => i.reducedPoints && i.reducedPoints.length > 0);
+
+  let topIds: string[];
+  if (centroid && centroid.length > 0 && hasAllReducedPoints) {
+    const dists = items.map(i => ({ id: i.textId, d: euclideanDistance(i.reducedPoints!, centroid) }));
+    dists.sort((a, b) => a.d - b.d);
+    topIds = dists.slice(0, Math.max(5, Math.min(10, dists.length))).map(x => x.id);
+  } else {
+    const idsToFetch = items.map(i => i.textId).slice(0, Math.min(items.length, 1000));
+    const { records = {} } = await index.namespace(namespace).fetch({ ids: idsToFetch });
+
+    const pts: number[][] = [];
+    const valid: {id: string, text: string}[] = [];
+    for (const id of idsToFetch) {
+      if (records[id]?.values?.length && typeof records[id].metadata?.text === 'string') {
+        pts.push(records[id].values);
+        valid.push({ id, text: records[id].metadata!.text as string });
+      }
     }
+    if (pts.length === 0) return [];
+
+    const center = new Array(pts[0].length).fill(0).map((_, d) => mean(pts.map(p => p[d])));
+    const dists = valid.map((r, i) => ({ id: r.id, d: euclideanDistance(pts[i], center) }));
+    dists.sort((a, b) => a.d - b.d);
+    topIds = dists.slice(0, Math.max(5, Math.min(10, dists.length))).map(x => x.id);
   }
 
-  if (points.length === 0) return [];
-
-  const dimensions = points[0].length;
-  const center = new Array(dimensions).fill(0);
-  for (let d = 0; d < dimensions; d++) {
-    center[d] = mean(points.map(p => p[d]));
-  }
-
-  const distances = validRecords.map((r, i) => ({
-    text: r.text,
-    dist: euclideanDistance(points[i], center)
-  }));
-
-  distances.sort((a, b) => a.dist - b.dist);
-  const numItems = Math.max(5, Math.min(10, distances.length));
-  return distances.slice(0, numItems).map(d => d.text);
+  if (topIds.length === 0) return [];
+  const fetchResponse = await index.namespace(namespace).fetch({ ids: topIds });
+  const records = fetchResponse.records || {};
+  return topIds.filter(id => records[id]?.metadata?.text)
+               .map(id => records[id].metadata!.text as string);
 }
 
 
@@ -84,8 +89,11 @@ async function fetchClusterData<T extends RecordMetadata>(
   for (const cluster of currentClusters) {
     const items = await ItemModel.find({ clusterId: cluster._id }).limit(1000).lean();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const textIds = items.map((item: any) => item.textId);
-    const representativeTexts = await getRepresentativeTexts(textIds, index, namespace);
+    const mappedItems = items.map((item: any) => ({
+      textId: item.textId,
+      reducedPoints: item.reducedPoints
+    }));
+    const representativeTexts = await getRepresentativeTexts(mappedItems, index, namespace, cluster.centroid);
 
     clustersData.push({
       name: cluster.name,
