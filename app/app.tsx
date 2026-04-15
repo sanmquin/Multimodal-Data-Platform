@@ -3,24 +3,32 @@ import { createRoot } from 'react-dom/client';
 
 const App = () => {
   const [docsData, setDocsData] = useState<Record<string, string>>({});
+  const [rawDocsData, setRawDocsData] = useState<Record<string, string>>({});
   const [activeDoc, setActiveDoc] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'docs' | 'playground'>('docs');
+  const [pineconeIndex, setPineconeIndex] = useState<string>('your-target-index');
 
   useEffect(() => {
     fetch('/build/docs.json')
       .then(res => res.json())
       .then(data => {
-        const processedData: Record<string, string> = {};
-        Object.keys(data).forEach(key => {
-          processedData[key] = data[key].replace(/\{\{DOMAIN\}\}/g, window.location.origin);
-        });
-        setDocsData(processedData);
-        if (Object.keys(processedData).length > 0) {
-          setActiveDoc(Object.keys(processedData)[0]);
+        setRawDocsData(data);
+        if (Object.keys(data).length > 0) {
+          setActiveDoc(Object.keys(data)[0]);
         }
       })
       .catch(console.error);
   }, []);
+
+  useEffect(() => {
+    const processedData: Record<string, string> = {};
+    Object.keys(rawDocsData).forEach(key => {
+      let content = rawDocsData[key].replace(/\{\{DOMAIN\}\}/g, window.location.origin);
+      content = content.replace(/\{\{PINECONE_INDEX\}\}/g, pineconeIndex);
+      processedData[key] = content;
+    });
+    setDocsData(processedData);
+  }, [rawDocsData, pineconeIndex]);
 
   useEffect(() => {
     const btns = document.querySelectorAll('[id^=copy-agent-btn]');
@@ -92,6 +100,19 @@ const App = () => {
                   </li>
                 ))}
               </ul>
+
+              <p className="menu-label mt-5">Configuration</p>
+              <div className="field">
+                <label className="label is-small">Pinecone Index</label>
+                <div className="control">
+                  <input
+                    className="input is-small"
+                    type="text"
+                    value={pineconeIndex}
+                    onChange={(e) => setPineconeIndex(e.target.value)}
+                  />
+                </div>
+              </div>
             </aside>
           </div>
           <div className="column">
