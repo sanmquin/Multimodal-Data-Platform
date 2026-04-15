@@ -65,11 +65,13 @@ function getModels(mongoCollection: string) {
     description: String,
     summary: String,
     version: { type: Number, default: 1 },
+    centroid: [Number],
     createdAt: { type: Date, default: Date.now }
   });
   const itemSchema = new mongoose.Schema({
     textId: String,
     clusterId: mongoose.Schema.Types.ObjectId,
+    reducedDimensions: [Number],
     createdAt: { type: Date, default: Date.now }
   });
   const PCAModel = mongoose.models[`${mongoCollection}_pca`] || mongoose.model(`${mongoCollection}_pca`, pcaSchema, `${mongoCollection}_pca`);
