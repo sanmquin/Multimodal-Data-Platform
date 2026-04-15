@@ -5,6 +5,7 @@ import { chunkArray } from './utils';
 async function resolveEmbeddings(
   textsToEmbed: string[],
   embedder?: (texts: string[]) => Promise<number[][]>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pc?: any,
   model?: string
 ): Promise<number[][]> {

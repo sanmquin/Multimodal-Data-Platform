@@ -31,6 +31,7 @@ export interface ClusterResult<T extends RecordMetadata = RecordMetadata> {
 
 export interface RetrieveAndClusterResult<T extends RecordMetadata = RecordMetadata> {
   clusters: ClusterResult<T>[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pcaModel?: any;
 }
 
@@ -52,4 +53,11 @@ export interface NamedCluster extends ClusterWithTexts {
   name: string;
   description: string;
   summary: string;
+}
+
+export interface RefineClustersOptions<T extends RecordMetadata = RecordMetadata> {
+  mongoDb: string;
+  mongoCollection: string;
+  index: Index<T>;
+  namespace: string;
 }

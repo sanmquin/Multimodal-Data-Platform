@@ -55,33 +55,37 @@ export async function embedAndCluster<T extends RecordMetadata = RecordMetadata>
   return namedClusters;
 }
 
+function getModels(mongoCollection: string) {
+  const pcaSchema = new mongoose.Schema({
+    modelBuffer: Buffer,
+    createdAt: { type: Date, default: Date.now }
+  });
+  const clusterSchema = new mongoose.Schema({
+    name: String,
+    description: String,
+    summary: String,
+    version: { type: Number, default: 1 },
+    createdAt: { type: Date, default: Date.now }
+  });
+  const itemSchema = new mongoose.Schema({
+    textId: String,
+    clusterId: mongoose.Schema.Types.ObjectId,
+    createdAt: { type: Date, default: Date.now }
+  });
+  const PCAModel = mongoose.models[`${mongoCollection}_pca`] || mongoose.model(`${mongoCollection}_pca`, pcaSchema, `${mongoCollection}_pca`);
+  const ClusterModel = mongoose.models[`${mongoCollection}_clusters`] || mongoose.model(`${mongoCollection}_clusters`, clusterSchema, `${mongoCollection}_clusters`);
+  const ItemModel = mongoose.models[`${mongoCollection}_items`] || mongoose.model(`${mongoCollection}_items`, itemSchema, `${mongoCollection}_items`);
+
+  return { PCAModel, ClusterModel, ItemModel };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function storeToMongo(mongoDb: string, mongoCollection: string, pcaModel: any, namedClusters: NamedCluster[]) {
   try {
     const isConnected = await connectMongoose(mongoDb);
     if (!isConnected) return;
 
-    const pcaSchema = new mongoose.Schema({
-      modelBuffer: Buffer,
-      createdAt: { type: Date, default: Date.now }
-    });
-
-    const clusterSchema = new mongoose.Schema({
-      name: String,
-      description: String,
-      summary: String,
-      createdAt: { type: Date, default: Date.now }
-    });
-
-    const itemSchema = new mongoose.Schema({
-      textId: String,
-      clusterId: mongoose.Schema.Types.ObjectId,
-      createdAt: { type: Date, default: Date.now }
-    });
-
-    const PCAModel = mongoose.models[`${mongoCollection}_pca`] || mongoose.model(`${mongoCollection}_pca`, pcaSchema, `${mongoCollection}_pca`);
-    const ClusterModel = mongoose.models[`${mongoCollection}_clusters`] || mongoose.model(`${mongoCollection}_clusters`, clusterSchema, `${mongoCollection}_clusters`);
-    const ItemModel = mongoose.models[`${mongoCollection}_items`] || mongoose.model(`${mongoCollection}_items`, itemSchema, `${mongoCollection}_items`);
+    const { PCAModel, ClusterModel, ItemModel } = getModels(mongoCollection);
 
     const pcaString = JSON.stringify(pcaModel);
     await PCAModel.create({ modelBuffer: Buffer.from(pcaString, 'utf-8') });
