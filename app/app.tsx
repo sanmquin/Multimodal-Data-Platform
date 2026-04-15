@@ -153,14 +153,14 @@ const Playground = () => {
   const [numClusters, setNumClusters] = useState('2');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
-  const [endpoint, setEndpoint] = useState<'embed' | 'cluster-background'>('embed');
+  const [endpoint, setEndpoint] = useState<'embed' | 'cluster-background' | 'refine-clusters'>('embed');
 
   const handleTest = async () => {
     setLoading(true);
     setResult('');
     try {
-      const texts = [JSON.parse(inputText)];
-      const body: any = { texts };
+      const parsedInput = JSON.parse(inputText);
+      const body: any = endpoint === 'refine-clusters' ? parsedInput : { texts: [parsedInput] };
 
       if (endpoint === 'cluster-background') {
         body.numClusters = parseInt(numClusters, 10);
@@ -172,7 +172,7 @@ const Playground = () => {
         body: JSON.stringify(body)
       });
 
-      if (endpoint === 'cluster-background' && response.status === 202) {
+      if ((endpoint === 'cluster-background' || endpoint === 'refine-clusters') && response.status === 202) {
         setResult('Accepted for background processing. Check Netlify logs.');
       } else {
         const data = await response.json();
@@ -195,6 +195,7 @@ const Playground = () => {
             <select value={endpoint} onChange={e => setEndpoint(e.target.value as any)}>
               <option value="embed">Embed (POST /.netlify/functions/embed)</option>
               <option value="cluster-background">Cluster Background (POST /.netlify/functions/cluster-background)</option>
+              <option value="refine-clusters">Refine Clusters (POST /.netlify/functions/refine-clusters)</option>
             </select>
           </div>
         </div>
