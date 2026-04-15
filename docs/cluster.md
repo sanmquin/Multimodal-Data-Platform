@@ -22,12 +22,18 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
   "namespace": "your-namespace",
   "skipEmbed": false,
   "mongoDb": "my_db",
-  "mongoCollection": "my_collection_prefix"
+  "mongoCollection": "my_collection_prefix",
+  "cumulative": false,
+  "context": "General overarching context for the clustering task.",
+  "storeReducedDimensions": true
 }
 ```
 
 - **skipEmbed**: Set to `true` to skip embedding generation and just retrieve and cluster existing items from Pinecone. Defaults to `false`.
 - **numClusters**: The number of clusters to form. Must be less than or equal to the total number of provided text ids found in Pinecone.
+- **cumulative**: If `true`, previously defined clusters are added to the prompt for generating the next cluster to avoid duplicate definitions. Defaults to `false`.
+- **context**: An optional string prepended to the cluster-naming prompt to guide the AI model's generation.
+- **storeReducedDimensions**: If `true`, the PCA-reduced dimensions (points and centroid) will be persisted alongside the cluster and item data in MongoDB.
 
 ### Environment Setup
 
@@ -81,7 +87,10 @@ Please write code to integrate the multimodal data platform cluster background A
   "namespace": "string",
   "skipEmbed": "boolean",
   "mongoDb": "string",
-  "mongoCollection": "string"
+  "mongoCollection": "string",
+  "cumulative": "boolean",
+  "context": "string",
+  "storeReducedDimensions": "boolean"
 }
 ```
 
@@ -96,6 +105,9 @@ Please write code to integrate the multimodal data platform cluster background A
 *   `skipEmbed` (*Optional*): Set to `true` to skip embedding generation and just retrieve and cluster existing items from Pinecone. Defaults to `false`.
 *   `mongoDb` (*Optional*): The name of the MongoDB database where PCA models and cluster assignments should be saved.
 *   `mongoCollection` (*Optional*): The prefix for the MongoDB collections to save into (e.g. `[prefix]_pca`, `[prefix]_clusters`, `[prefix]_items`). Required if `mongoDb` is specified.
+*   `cumulative` (*Optional*): Set to `true` to pass previous cluster definitions into the next cluster's prompt. Defaults to `false`.
+*   `context` (*Optional*): Custom text inserted at the beginning of the prompt used for generating cluster definitions.
+*   `storeReducedDimensions` (*Optional*): Set to `true` to persist the PCA-reduced point coordinates (`reducedDimensions` array on items and `centroid` on clusters) into the `[prefix]_items` and `[prefix]_clusters` Mongo collections respectively.
 
 #### Response
 

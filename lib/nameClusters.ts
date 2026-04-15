@@ -1,13 +1,23 @@
 import { ClusterWithTexts, NamedCluster } from './types';
 import { gemmaGenerate } from './gemma';
 
-async function generateClusterNameAndDesc(clusterTexts: string[]): Promise<{ name: string, description: string, summary: string }> {
-  const prompt = `
-You are a helpful AI assistant. I will provide you with a list of texts belonging to a single cluster.
+async function generateClusterNameAndDesc(
+  clusterTexts: string[],
+  previousClusters: string[] = [],
+  context: string = ""
+): Promise<{ name: string, description: string, summary: string }> {
+  let promptContext = context ? `${context}\n\n` : "";
+  let avoidDuplicationInstructions = "";
+
+  if (previousClusters.length > 0) {
+    avoidDuplicationInstructions = `\nAvoid duplicating these definitions. The following clusters have already been defined:\n${previousClusters.join('\n')}\n`;
+  }
+
+  const prompt = `${promptContext}You are a helpful AI assistant. I will provide you with a list of texts belonging to a single cluster.
 Please analyze the themes and subjects of these texts and provide:
 1. A concise "name" for the cluster.
 2. A "description" of the cluster that includes examples of the items in it.
-3. A short "summary" of the cluster.
+3. A short "summary" of the cluster.${avoidDuplicationInstructions}
 
 Respond ONLY with a valid JSON object with keys: "name", "description", and "summary". Do not include markdown formatting like \`\`\`json.
 
@@ -51,21 +61,30 @@ ${JSON.stringify(clusterTexts, null, 2)}
  * @returns A promise resolving to a list of named clusters.
  */
 export async function nameClusters<T extends ClusterWithTexts>(
-  clusters: T[]
+  clusters: T[],
+  options: { cumulative?: boolean, context?: string } = {}
 ): Promise<(T & NamedCluster)[]> {
   // Sort clusters from largest number of elements to smallest
   const sortedClusters = [...clusters].sort((a, b) => b.texts.length - a.texts.length);
 
   const namedClusters: (T & NamedCluster)[] = [];
+  const previousClusters: string[] = [];
+  const { cumulative = false, context = "" } = options;
 
   for (const cluster of sortedClusters) {
-    const generated = await generateClusterNameAndDesc(cluster.texts);
+    const generated = await generateClusterNameAndDesc(cluster.texts, previousClusters, context);
+
+    if (cumulative) {
+      previousClusters.push(`Name: ${generated.name}\nSummary: ${generated.summary}`);
+    }
 
     namedClusters.push({
       ...cluster,
       name: generated.name,
       description: generated.description,
-      summary: generated.summary
+      summary: generated.summary,
+      centroid: cluster.centroid,
+      reducedPoints: cluster.reducedPoints
     });
   }
 
