@@ -8,7 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
-export const handler: Handler = async (event, context) => {
+export const handler: Handler = async (event) => {
   console.log(`[embed function] Received ${event.httpMethod} request`);
 
   if (event.httpMethod === 'OPTIONS') {
@@ -61,10 +61,12 @@ export const handler: Handler = async (event, context) => {
     let index = pc.index(indexName);
 
     if (namespace) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       index = index.namespace(namespace) as any;
     }
 
     const options: EmbedOptions = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       index: index as any,
       texts,
       batchSize,
@@ -84,12 +86,13 @@ export const handler: Handler = async (event, context) => {
       headers: corsHeaders,
       body: JSON.stringify(stats)
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     console.error(`[embed function] Uncaught error during processing:`, error);
     return {
       statusCode: 500,
       headers: corsHeaders,
-      body: JSON.stringify({ error: error.message || 'Internal Server Error' })
+      body: JSON.stringify({ error: err.message || 'Internal Server Error' })
     };
   }
 };

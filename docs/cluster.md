@@ -1,12 +1,12 @@
-# Cluster Background API
+# Cluster API
 
-This background endpoint receives a list of texts, embeds missing ones, clusters them based on Pinecone vectors, and generates names and descriptions for each cluster using a generative AI model.
+This endpoint receives a list of texts, validates the payload synchronously, and then delegates the heavy lifting (embedding missing texts, clustering them based on Pinecone vectors, and generating names and descriptions for each cluster using a generative AI model) to a background job.
 
-## Cloud API (Netlify Background Function)
+## Cloud API (Netlify Function)
 
-Background functions return a `202 Accepted` status immediately and process the work asynchronously.
+The endpoint handles the initial validation. If successful, it triggers a background function and immediately returns a `202 Accepted` status to let you know the process has started asynchronously.
 
-`POST {{DOMAIN}}/.netlify/functions/cluster-background`
+`POST {{DOMAIN}}/.netlify/functions/cluster`
 
 ### Payload structure
 
@@ -44,7 +44,7 @@ Please write code to integrate the multimodal data platform cluster background A
 
 ### API Endpoint Signature
 
-**Endpoint URL**: `POST {{DOMAIN}}/.netlify/functions/cluster-background`
+**Endpoint URL**: `POST {{DOMAIN}}/.netlify/functions/cluster`
 **Content-Type**: `application/json`
 
 #### Request Payload Structure
