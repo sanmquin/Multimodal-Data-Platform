@@ -6,7 +6,17 @@ const App = () => {
   const [rawDocsData, setRawDocsData] = useState<Record<string, string>>({});
   const [activeDoc, setActiveDoc] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'docs' | 'playground'>('docs');
-  const [pineconeIndex, setPineconeIndex] = useState<string>('your-target-index');
+  const [pineconeIndex, setPineconeIndex] = useState<string>(
+    localStorage.getItem('pineconeIndex') || 'your-target-index'
+  );
+  const [mongoDb, setMongoDb] = useState<string>(
+    localStorage.getItem('mongoDb') || 'my_db'
+  );
+
+  useEffect(() => {
+    localStorage.setItem('pineconeIndex', pineconeIndex);
+    localStorage.setItem('mongoDb', mongoDb);
+  }, [pineconeIndex, mongoDb]);
 
   useEffect(() => {
     fetch('/build/docs.json')
@@ -25,10 +35,11 @@ const App = () => {
     Object.keys(rawDocsData).forEach(key => {
       let content = rawDocsData[key].replace(/\{\{DOMAIN\}\}/g, window.location.origin);
       content = content.replace(/\{\{PINECONE_INDEX\}\}/g, pineconeIndex);
+      content = content.replace(/\{\{MONGO_DB\}\}/g, mongoDb);
       processedData[key] = content;
     });
     setDocsData(processedData);
-  }, [rawDocsData, pineconeIndex]);
+  }, [rawDocsData, pineconeIndex, mongoDb]);
 
   useEffect(() => {
     const btns = document.querySelectorAll('[id^=copy-agent-btn]');
@@ -110,6 +121,17 @@ const App = () => {
                     type="text"
                     value={pineconeIndex}
                     onChange={(e) => setPineconeIndex(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="field">
+                <label className="label is-small">Mongo DB</label>
+                <div className="control">
+                  <input
+                    className="input is-small"
+                    type="text"
+                    value={mongoDb}
+                    onChange={(e) => setMongoDb(e.target.value)}
                   />
                 </div>
               </div>
