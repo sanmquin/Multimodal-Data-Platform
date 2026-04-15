@@ -32,7 +32,7 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[cluster-background function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts, numClusters = 2, batchSize = 50, namespace, skipEmbed = false, cloud, region } = parsedBody;
+    const { texts, numClusters = 2, batchSize = 50, namespace, skipEmbed = false, cloud, region, cumulative, context, storeReducedDimensions } = parsedBody;
     const indexName = (parsedBody.indexName || 'default-index').toLowerCase();
     const mongoDb = parsedBody.mongoDb?.toLowerCase();
     const mongoCollection = parsedBody.mongoCollection;
@@ -81,7 +81,10 @@ export const handler: Handler = async (event) => {
       cloud,
       region,
       mongoDb,
-      mongoCollection
+      mongoCollection,
+      cumulative,
+      context,
+      storeReducedDimensions
     };
 
     console.log(`[cluster-background function] Calling embedAndCluster() logic...`);

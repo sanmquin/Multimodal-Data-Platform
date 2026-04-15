@@ -14,12 +14,15 @@ export interface EmbedAndClusterOptions<T extends RecordMetadata = RecordMetadat
   pcaDimensions?: number;
   mongoDb?: string;
   mongoCollection?: string;
+  cumulative?: boolean;
+  context?: string;
+  storeReducedDimensions?: boolean;
 }
 
 export async function embedAndCluster<T extends RecordMetadata = RecordMetadata>(
   options: EmbedAndClusterOptions<T>
 ): Promise<NamedCluster[]> {
-  const { texts, index, numClusters, namespace = '', skipEmbed = false, reduceDimensions, pcaDimensions, mongoDb, mongoCollection, ...embedOpts } = options;
+  const { texts, index, numClusters, namespace = '', skipEmbed = false, reduceDimensions, pcaDimensions, mongoDb, mongoCollection, cumulative, context, storeReducedDimensions, ...embedOpts } = options;
 
   if (!skipEmbed) {
     await embed({ texts, index, ...embedOpts });
@@ -43,13 +46,13 @@ export async function embedAndCluster<T extends RecordMetadata = RecordMetadata>
         clusterTextIds.push(record.id);
       }
     }
-    return { texts: clusterTexts, textIds: clusterTextIds };
+    return { texts: clusterTexts, textIds: clusterTextIds, centroid: c.centroid, reducedPoints: c.reducedPoints };
   });
 
-  const namedClusters = await nameClusters(clustersWithTexts);
+  const namedClusters = await nameClusters(clustersWithTexts, { cumulative, context });
 
   if (mongoDb && mongoCollection && pcaModel) {
-    await storeToMongo(mongoDb, mongoCollection, pcaModel, namedClusters);
+    await storeToMongo(mongoDb, mongoCollection, pcaModel, namedClusters, storeReducedDimensions);
   }
 
   return namedClusters;
@@ -82,7 +85,7 @@ function getModels(mongoCollection: string) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function storeToMongo(mongoDb: string, mongoCollection: string, pcaModel: any, namedClusters: NamedCluster[]) {
+async function storeToMongo(mongoDb: string, mongoCollection: string, pcaModel: any, namedClusters: NamedCluster[], storeReducedDimensions?: boolean) {
   try {
     const isConnected = await connectMongoose(mongoDb);
     if (!isConnected) return;
@@ -93,16 +96,28 @@ async function storeToMongo(mongoDb: string, mongoCollection: string, pcaModel: 
     await PCAModel.create({ modelBuffer: Buffer.from(pcaString, 'utf-8') });
 
     for (const nc of namedClusters) {
-      const clusterDoc = await ClusterModel.create({
+      const clusterDocData: any = {
         name: nc.name,
         description: nc.description,
         summary: nc.summary
-      });
+      };
 
-      const itemDocs = nc.textIds.map(id => ({
-        textId: id,
-        clusterId: clusterDoc._id
-      }));
+      if (storeReducedDimensions && nc.centroid) {
+        clusterDocData.centroid = nc.centroid;
+      }
+
+      const clusterDoc = await ClusterModel.create(clusterDocData);
+
+      const itemDocs = nc.textIds.map((id, index) => {
+        const doc: any = {
+          textId: id,
+          clusterId: clusterDoc._id
+        };
+        if (storeReducedDimensions && nc.reducedPoints && nc.reducedPoints[index]) {
+          doc.reducedDimensions = nc.reducedPoints[index];
+        }
+        return doc;
+      });
 
       if (itemDocs.length > 0) {
         await ItemModel.insertMany(itemDocs);

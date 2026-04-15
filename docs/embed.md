@@ -16,7 +16,7 @@ You can make an HTTP POST request to:
     { "id": "1", "text": "Testing the cloud version." }
   ],
   "batchSize": 50,
-  "indexName": "your-target-index",
+  "indexName": "{{PINECONE_INDEX}}",
   "namespace": "your-namespace"
 }
 ```
@@ -49,7 +49,7 @@ If you are an LLM agent or automated tooling trying to reason about how to call 
     { "id": "string", "text": "string", "metadata": {} }
   ],
   "batchSize": "number",
-  "indexName": "string",
+  "indexName": "{{PINECONE_INDEX}}",
   "namespace": "string"
 }
 ```
