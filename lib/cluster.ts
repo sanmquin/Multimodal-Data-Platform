@@ -73,12 +73,14 @@ export async function retrieveAndCluster<T extends RecordMetadata = RecordMetada
 
   const clusters: ClusterResult<T>[] = centroids.map((centroid: number[]) => ({
     centroid,
-    records: []
+    records: [],
+    reducedPoints: []
   }));
 
   for (let i = 0; i < labels.length; i++) {
     const label = labels[i];
     clusters[label].records.push(validRecords[i]);
+    clusters[label].reducedPoints!.push(finalPoints[i]);
   }
 
   return { clusters, pcaModel: pcaModelJson };

@@ -3,24 +3,43 @@ import { createRoot } from 'react-dom/client';
 
 const App = () => {
   const [docsData, setDocsData] = useState<Record<string, string>>({});
+  const [rawDocsData, setRawDocsData] = useState<Record<string, string>>({});
   const [activeDoc, setActiveDoc] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'docs' | 'playground'>('docs');
+  const [pineconeIndex, setPineconeIndex] = useState<string>(
+    localStorage.getItem('pineconeIndex') || 'your-target-index'
+  );
+  const [mongoDb, setMongoDb] = useState<string>(
+    localStorage.getItem('mongoDb') || 'my_db'
+  );
+
+  useEffect(() => {
+    localStorage.setItem('pineconeIndex', pineconeIndex);
+    localStorage.setItem('mongoDb', mongoDb);
+  }, [pineconeIndex, mongoDb]);
 
   useEffect(() => {
     fetch('/build/docs.json')
       .then(res => res.json())
       .then(data => {
-        const processedData: Record<string, string> = {};
-        Object.keys(data).forEach(key => {
-          processedData[key] = data[key].replace(/\{\{DOMAIN\}\}/g, window.location.origin);
-        });
-        setDocsData(processedData);
-        if (Object.keys(processedData).length > 0) {
-          setActiveDoc(Object.keys(processedData)[0]);
+        setRawDocsData(data);
+        if (Object.keys(data).length > 0) {
+          setActiveDoc(Object.keys(data)[0]);
         }
       })
       .catch(console.error);
   }, []);
+
+  useEffect(() => {
+    const processedData: Record<string, string> = {};
+    Object.keys(rawDocsData).forEach(key => {
+      let content = rawDocsData[key].replace(/\{\{DOMAIN\}\}/g, window.location.origin);
+      content = content.replace(/\{\{PINECONE_INDEX\}\}/g, pineconeIndex);
+      content = content.replace(/\{\{MONGO_DB\}\}/g, mongoDb);
+      processedData[key] = content;
+    });
+    setDocsData(processedData);
+  }, [rawDocsData, pineconeIndex, mongoDb]);
 
   useEffect(() => {
     const btns = document.querySelectorAll('[id^=copy-agent-btn]');
@@ -92,6 +111,30 @@ const App = () => {
                   </li>
                 ))}
               </ul>
+
+              <p className="menu-label mt-5">Configuration</p>
+              <div className="field">
+                <label className="label is-small">Pinecone Index</label>
+                <div className="control">
+                  <input
+                    className="input is-small"
+                    type="text"
+                    value={pineconeIndex}
+                    onChange={(e) => setPineconeIndex(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="field">
+                <label className="label is-small">Mongo DB</label>
+                <div className="control">
+                  <input
+                    className="input is-small"
+                    type="text"
+                    value={mongoDb}
+                    onChange={(e) => setMongoDb(e.target.value)}
+                  />
+                </div>
+              </div>
             </aside>
           </div>
           <div className="column">
@@ -110,14 +153,14 @@ const Playground = () => {
   const [numClusters, setNumClusters] = useState('2');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
-  const [endpoint, setEndpoint] = useState<'embed' | 'cluster-background'>('embed');
+  const [endpoint, setEndpoint] = useState<'embed' | 'cluster-background' | 'refine-clusters'>('embed');
 
   const handleTest = async () => {
     setLoading(true);
     setResult('');
     try {
-      const texts = [JSON.parse(inputText)];
-      const body: any = { texts };
+      const parsedInput = JSON.parse(inputText);
+      const body: any = endpoint === 'refine-clusters' ? parsedInput : { texts: [parsedInput] };
 
       if (endpoint === 'cluster-background') {
         body.numClusters = parseInt(numClusters, 10);
@@ -129,7 +172,7 @@ const Playground = () => {
         body: JSON.stringify(body)
       });
 
-      if (endpoint === 'cluster-background' && response.status === 202) {
+      if ((endpoint === 'cluster-background' || endpoint === 'refine-clusters') && response.status === 202) {
         setResult('Accepted for background processing. Check Netlify logs.');
       } else {
         const data = await response.json();
@@ -152,6 +195,7 @@ const Playground = () => {
             <select value={endpoint} onChange={e => setEndpoint(e.target.value as any)}>
               <option value="embed">Embed (POST /.netlify/functions/embed)</option>
               <option value="cluster-background">Cluster Background (POST /.netlify/functions/cluster-background)</option>
+              <option value="refine-clusters">Refine Clusters (POST /.netlify/functions/refine-clusters)</option>
             </select>
           </div>
         </div>

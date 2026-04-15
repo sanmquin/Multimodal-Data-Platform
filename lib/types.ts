@@ -27,10 +27,12 @@ export interface EmbedOptions<T extends RecordMetadata = RecordMetadata> {
 export interface ClusterResult<T extends RecordMetadata = RecordMetadata> {
   centroid: number[];
   records: PineconeRecord<T>[];
+  reducedPoints?: number[][];
 }
 
 export interface RetrieveAndClusterResult<T extends RecordMetadata = RecordMetadata> {
   clusters: ClusterResult<T>[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pcaModel?: any;
 }
 
@@ -46,10 +48,21 @@ export interface RetrieveAndClusterOptions<T extends RecordMetadata = RecordMeta
 export interface ClusterWithTexts {
   texts: string[];
   textIds: string[];
+  reducedPoints?: number[][];
+  centroid?: number[];
 }
 
 export interface NamedCluster extends ClusterWithTexts {
   name: string;
   description: string;
   summary: string;
+  reducedPoints?: number[][];
+  centroid?: number[];
+}
+
+export interface RefineClustersOptions<T extends RecordMetadata = RecordMetadata> {
+  mongoDb: string;
+  mongoCollection: string;
+  index: Index<T>;
+  namespace: string;
 }
