@@ -13,9 +13,9 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
 ```json
 {
   "mongoDb": "{{MONGO_DB}}",
-  "mongoCollection": "my_collection_prefix",
+  "mongoCollection": "{{MONGO_COLLECTION}}",
   "indexName": "{{PINECONE_INDEX}}",
-  "namespace": "your-namespace"
+  "namespace": "{{NAMESPACE}}"
 }
 ```
 
@@ -61,9 +61,9 @@ Please write code to integrate the multimodal data platform refine clusters back
 ```json
 {
   "mongoDb": "{{MONGO_DB}}",
-  "mongoCollection": "string",
+  "mongoCollection": "{{MONGO_COLLECTION}}",
   "indexName": "{{PINECONE_INDEX}}",
-  "namespace": "string"
+  "namespace": "{{NAMESPACE}}"
 }
 ```
 
