@@ -14,19 +14,12 @@ async function generateClusterNameAndDesc(
       systemInstruction: "You are an expert at categorizing text. Always output raw, valid JSON."
     });
 
-    let responseText = response.text.trim();
-    if (responseText.startsWith('```json')) {
-      responseText = responseText.substring(7);
-    }
-    if (responseText.startsWith('```')) {
-      responseText = responseText.substring(3);
-    }
-    if (responseText.endsWith('```')) {
-      responseText = responseText.slice(0, -3);
-    }
-    responseText = responseText.trim();
+    let text = response.text.trim();
+    if (text.startsWith('```json')) text = text.substring(7);
+    if (text.startsWith('```')) text = text.substring(3);
+    if (text.endsWith('```')) text = text.slice(0, -3);
 
-    return JSON.parse(responseText);
+    return JSON.parse(text.trim());
   } catch (error) {
     console.error("Failed to generate name for cluster:", error);
     return {

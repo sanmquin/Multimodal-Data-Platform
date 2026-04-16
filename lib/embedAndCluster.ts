@@ -4,7 +4,7 @@ import { embed } from './embed';
 import { retrieveAndCluster } from './cluster';
 import { nameClusters } from './nameClusters';
 import { connectMongoose } from './mongo';
-import mongoose from 'mongoose';
+import { getMongooseModels } from './models';
 
 export interface EmbedAndClusterOptions<T extends RecordMetadata = RecordMetadata> extends EmbedOptions<T> {
   numClusters: number;
@@ -58,70 +58,31 @@ export async function embedAndCluster<T extends RecordMetadata = RecordMetadata>
   return namedClusters;
 }
 
-function getModels(mongoCollection: string) {
-  const pcaSchema = new mongoose.Schema({
-    modelBuffer: Buffer,
-    createdAt: { type: Date, default: Date.now }
-  });
-  const clusterSchema = new mongoose.Schema({
-    name: String,
-    description: String,
-    summary: String,
-    version: { type: Number, default: 1 },
-    centroid: [Number],
-    createdAt: { type: Date, default: Date.now }
-  });
-  const itemSchema = new mongoose.Schema({
-    textId: String,
-    clusterId: mongoose.Schema.Types.ObjectId,
-    reducedDimensions: [Number],
-    createdAt: { type: Date, default: Date.now }
-  });
-  const PCAModel = mongoose.models[`${mongoCollection}_pca`] || mongoose.model(`${mongoCollection}_pca`, pcaSchema, `${mongoCollection}_pca`);
-  const ClusterModel = mongoose.models[`${mongoCollection}_clusters`] || mongoose.model(`${mongoCollection}_clusters`, clusterSchema, `${mongoCollection}_clusters`);
-  const ItemModel = mongoose.models[`${mongoCollection}_items`] || mongoose.model(`${mongoCollection}_items`, itemSchema, `${mongoCollection}_items`);
-
-  return { PCAModel, ClusterModel, ItemModel };
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function storeToMongo(mongoDb: string, mongoCollection: string, pcaModel: any, namedClusters: NamedCluster[], storeReducedDimensions?: boolean) {
   try {
-    const isConnected = await connectMongoose(mongoDb);
-    if (!isConnected) return;
+    if (!(await connectMongoose(mongoDb))) return;
 
-    const { PCAModel, ClusterModel, ItemModel } = getModels(mongoCollection);
-
-    const pcaString = JSON.stringify(pcaModel);
-    await PCAModel.create({ modelBuffer: Buffer.from(pcaString, 'utf-8') });
+    const { PCAModel, ClusterModel, ItemModel } = getMongooseModels(mongoCollection);
+    await PCAModel.create({ modelBuffer: Buffer.from(JSON.stringify(pcaModel), 'utf-8') });
 
     for (const nc of namedClusters) {
-      const clusterDocData: any = {
-        name: nc.name,
-        description: nc.description,
-        summary: nc.summary
-      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clusterData: any = { name: nc.name, description: nc.description, summary: nc.summary };
+      if (storeReducedDimensions && nc.centroid) clusterData.centroid = nc.centroid;
 
-      if (storeReducedDimensions && nc.centroid) {
-        clusterDocData.centroid = nc.centroid;
-      }
-
-      const clusterDoc = await ClusterModel.create(clusterDocData);
+      const clusterDoc = await ClusterModel.create(clusterData);
 
       const itemDocs = nc.textIds.map((id, index) => {
-        const doc: any = {
-          textId: id,
-          clusterId: clusterDoc._id
-        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const doc: any = { textId: id, clusterId: clusterDoc._id };
         if (storeReducedDimensions && nc.reducedPoints && nc.reducedPoints[index]) {
           doc.reducedDimensions = nc.reducedPoints[index];
         }
         return doc;
       });
 
-      if (itemDocs.length > 0) {
-        await ItemModel.insertMany(itemDocs);
-      }
+      if (itemDocs.length > 0) await ItemModel.insertMany(itemDocs);
     }
   } catch (err) {
     console.error('Failed to store PCA model and clusters to Mongo:', err);
