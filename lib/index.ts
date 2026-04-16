@@ -1,4 +1,5 @@
 export * from './types';
+export * from './models';
 export * from './utils';
 export * from './embed';
 export * from './cluster';

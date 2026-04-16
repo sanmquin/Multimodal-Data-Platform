@@ -53,12 +53,17 @@ Data is stored in three separate collections based on the `mongoCollection` pref
     *   `name` (String): The generated name of the cluster.
     *   `description` (String): A detailed description of the cluster's theme.
     *   `summary` (String): A concise summary of the cluster.
+    *   `version` (Number): The version of the cluster. Defaults to 1.
+    *   `centroid` (Array of Numbers): Optional. The PCA-reduced point coordinates of the cluster center if `storeReducedDimensions` was used.
     *   `createdAt` (Date): The time the cluster was created.
 
 3.  **`[prefix]_items`**: Stores the mapping between your original text records and their assigned clusters.
     *   `textId` (String): The `id` of the text record you provided.
     *   `clusterId` (ObjectId): The MongoDB `_id` of the associated cluster document in the `[prefix]_clusters` collection.
+    *   `reducedDimensions` (Array of Numbers): Optional. The PCA-reduced point coordinates if `storeReducedDimensions` was used.
     *   `createdAt` (Date): The time the item assignment was created.
+
+When querying the collections directly, you should sort the clusters by `version` descending (`sort({ version: -1 })`) to get the latest cluster taxonomies, especially if you have run subsequent refinement operations.
 
 ### Agent Prompt
 
