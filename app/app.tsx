@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
+import { prompts } from '../lib/prompts';
 
 const App = () => {
   const [docsData, setDocsData] = useState<Record<string, string>>({});
   const [rawDocsData, setRawDocsData] = useState<Record<string, string>>({});
   const [activeDoc, setActiveDoc] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'docs' | 'playground'>('docs');
+  const [activeTab, setActiveTab] = useState<'docs' | 'playground' | 'prompts'>('docs');
   const [pineconeIndex, setPineconeIndex] = useState<string>(
     localStorage.getItem('pineconeIndex') || 'your-target-index'
   );
@@ -78,6 +79,9 @@ const App = () => {
           <li className={activeTab === 'playground' ? 'is-active' : ''}>
             <a onClick={() => setActiveTab('playground')}>Playground</a>
           </li>
+          <li className={activeTab === 'prompts' ? 'is-active' : ''}>
+            <a onClick={() => setActiveTab('prompts')}>Prompts</a>
+          </li>
         </ul>
       </div>
 
@@ -144,6 +148,23 @@ const App = () => {
       )}
 
       {activeTab === 'playground' && <Playground />}
+
+      {activeTab === 'prompts' && <PromptsView />}
+    </div>
+  );
+};
+
+const PromptsView = () => {
+  return (
+    <div className="box">
+      <h2 className="subtitle">System Prompts</h2>
+      {prompts.map((prompt) => (
+        <div key={prompt.name} className="content mb-5">
+          <h3 className="is-size-5">{prompt.name}</h3>
+          <p><em>{prompt.description}</em></p>
+          <pre><code>{prompt.template}</code></pre>
+        </div>
+      ))}
     </div>
   );
 };

@@ -8,3 +8,4 @@ export * from './gemma';
 export * from './gemini';
 export * from './embedAndCluster';
 export * from './refineClusters';
+export * from './prompts';
