@@ -1,4 +1,5 @@
 import { Pinecone } from '@pinecone-database/pinecone';
+import MLR from 'ml-regression-multivariate-linear';
 import { describeFeatures } from '../describeFeatures';
 import { evaluateFeatures } from '../evaluateFeatures';
 import { embedAndReduce } from '../embedAndReduce';
@@ -20,6 +21,8 @@ export interface FeaturePipelineResult {
   reducedPoints: number[][];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pcaModelJson: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  regressionModelJson?: any;
 }
 
 /**
@@ -60,5 +63,40 @@ export async function featurePipeline(
     pcaDimensions
   });
 
-  return { features, evaluations, points, reducedPoints, pcaModelJson };
+  // 4. Train a linear regression to predict features from embeddings
+  const X = reduceDimensions && reducedPoints && reducedPoints.length > 0 ? reducedPoints : points;
+  const regressionModelJson = trainAndEvaluateRegression(X, evaluations, features);
+
+  return { features, evaluations, points, reducedPoints, pcaModelJson, regressionModelJson };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function trainAndEvaluateRegression(X: number[][], evaluations: TextFeatureEvaluation[], features: Feature[]): any {
+  if (!X || X.length === 0 || evaluations.length !== X.length || features.length === 0) {
+    return undefined;
+  }
+
+  const Y = evaluations.map((evalObj) => {
+    return features.map((f) => {
+      const featEval = evalObj.evaluations.find((ev) => ev.featureName === f.name);
+      return featEval ? featEval.score : 0;
+    });
+  });
+
+  const mlr = new MLR(X, Y);
+  const yPred = mlr.predict(X);
+
+  let mse = 0;
+  let totalElements = 0;
+  for (let i = 0; i < Y.length; i++) {
+    for (let j = 0; j < Y[i].length; j++) {
+      const diff = Y[i][j] - yPred[i][j];
+      mse += diff * diff;
+      totalElements++;
+    }
+  }
+  mse = totalElements > 0 ? mse / totalElements : 0;
+  console.log(`Training error (MSE): ${mse}`);
+
+  return mlr.toJSON();
 }
