@@ -5,7 +5,7 @@ import { embedAndReduce } from '../embedAndReduce';
 import { Feature, TextFeatureEvaluation, TextRecord } from '../types';
 
 export interface FeaturePipelineOptions {
-  texts: string[];
+  texts: TextRecord[];
   embedder?: (texts: string[]) => Promise<number[][]>;
   pc?: Pinecone;
   model?: string;
@@ -14,7 +14,6 @@ export interface FeaturePipelineOptions {
 }
 
 export interface FeaturePipelineResult {
-  records: TextRecord[];
   features: Feature[];
   evaluations: TextFeatureEvaluation[];
   points: number[][];
@@ -36,24 +35,20 @@ export async function featurePipeline(
   const { texts, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20 } = options;
 
   if (!texts || texts.length === 0) {
-    return { records: [], features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
+    return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
   }
 
-  // Generate IDs for texts
-  const records: TextRecord[] = texts.map((text, i) => ({
-    id: String(i + 1),
-    text
-  }));
+  const rawTexts = texts.map((t) => t.text);
 
   // 1. Describe the texts to find the features
-  const features = await describeFeatures(texts);
+  const features = await describeFeatures(rawTexts);
 
   if (!features || features.length === 0) {
-    return { records, features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
+    return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
   }
 
   // 2. Evaluate the texts to get numerical quantification of features
-  const evaluations = await evaluateFeatures(texts, features);
+  const evaluations = await evaluateFeatures(rawTexts, features);
 
   // 3. Generate embeddings and reduce dimensions using the common utility
   const { points, reducedPoints, pcaModelJson } = await embedAndReduce({
@@ -65,5 +60,5 @@ export async function featurePipeline(
     pcaDimensions
   });
 
-  return { records, features, evaluations, points, reducedPoints, pcaModelJson };
+  return { features, evaluations, points, reducedPoints, pcaModelJson };
 }

@@ -1,8 +1,9 @@
 import { Pinecone } from '@pinecone-database/pinecone';
 import { applyPCAIfRequested } from './utils';
+import { TextRecord } from './types';
 
 export interface EmbedAndReduceOptions {
-  texts: string[];
+  texts: TextRecord[];
   embedder?: (texts: string[]) => Promise<number[][]>;
   pc?: Pinecone;
   model?: string;
@@ -18,7 +19,7 @@ export interface EmbedAndReduceResult {
 }
 
 /**
- * Generates embeddings for a list of texts and optionally reduces their dimensionality.
+ * Generates embeddings for a list of text records and optionally reduces their dimensionality.
  *
  * @param options - The options for embedding and reducing.
  * @returns A promise resolving to the embeddings and optionally reduced points.
@@ -36,14 +37,15 @@ export async function embedAndReduce(
     throw new Error('You must provide either an embedder function OR a Pinecone instance (pc) and a model string.');
   }
 
+  const textsToEmbed = texts.map((t) => t.text);
   let points: number[][] = [];
 
   if (embedder) {
-    points = await embedder(texts);
+    points = await embedder(textsToEmbed);
   } else if (pc && model) {
     const result = await pc.inference.embed({
       model: model,
-      inputs: texts,
+      inputs: textsToEmbed,
       parameters: {
         inputType: 'passage',
         truncate: 'END'
