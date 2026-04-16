@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
+import { PROMPTS } from '../lib/prompts';
 
 const App = () => {
   const [docsData, setDocsData] = useState<Record<string, string>>({});
   const [rawDocsData, setRawDocsData] = useState<Record<string, string>>({});
   const [activeDoc, setActiveDoc] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'docs' | 'playground'>('docs');
+  const [activeTab, setActiveTab] = useState<'docs' | 'playground' | 'prompts'>('docs');
   const [pineconeIndex, setPineconeIndex] = useState<string>(
     localStorage.getItem('pineconeIndex') || 'your-target-index'
   );
@@ -78,6 +79,9 @@ const App = () => {
           <li className={activeTab === 'playground' ? 'is-active' : ''}>
             <a onClick={() => setActiveTab('playground')}>Playground</a>
           </li>
+          <li className={activeTab === 'prompts' ? 'is-active' : ''}>
+            <a onClick={() => setActiveTab('prompts')}>Prompts</a>
+          </li>
         </ul>
       </div>
 
@@ -144,6 +148,22 @@ const App = () => {
       )}
 
       {activeTab === 'playground' && <Playground />}
+      {activeTab === 'prompts' && <Prompts />}
+    </div>
+  );
+};
+
+const Prompts = () => {
+  return (
+    <div className="box">
+      <h2 className="subtitle">AI Prompts</h2>
+      <p>The following are the prompt templates used by the AI agents.</p>
+      {Object.entries(PROMPTS).map(([key, template]) => (
+        <div key={key} className="mb-5">
+          <h3 className="is-size-5 has-text-weight-bold mb-2">{key}</h3>
+          <pre style={{ whiteSpace: 'pre-wrap' }}>{template.trim()}</pre>
+        </div>
+      ))}
     </div>
   );
 };

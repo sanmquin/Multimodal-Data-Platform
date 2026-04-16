@@ -6,4 +6,5 @@ export * from './nameClusters';
 export * from './gemma';
 export * from './gemini';
 export * from './embedAndCluster';
+export * from './prompts';
 export * from './refineClusters';
