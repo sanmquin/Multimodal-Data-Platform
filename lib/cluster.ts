@@ -1,24 +1,6 @@
 import { RecordMetadata, Index, PineconeRecord } from '@pinecone-database/pinecone';
 import { RetrieveAndClusterResult, ClusterResult, RetrieveAndClusterOptions } from './types';
-import { customKMeans } from './utils';
-import { PCA } from 'ml-pca';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyPCAIfRequested(points: number[][], reduceDimensions: boolean, pcaDimensions: number): { finalPoints: number[][], pcaModelJson: any } {
-  let finalPoints = points;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let pcaModelJson: any = undefined;
-
-  if (reduceDimensions && points.length > 0 && points[0].length > 0) {
-    const pca = new PCA(points);
-    const nComponents = Math.min(pcaDimensions, pca.getExplainedVariance().length);
-    if (nComponents > 0) {
-      finalPoints = pca.predict(points, { nComponents }).to2DArray();
-      pcaModelJson = pca.toJSON();
-    }
-  }
-  return { finalPoints, pcaModelJson };
-}
+import { customKMeans, applyPCAIfRequested } from './utils';
 
 async function fetchAndFilterRecords<T extends RecordMetadata = RecordMetadata>(
   ids: string[],
