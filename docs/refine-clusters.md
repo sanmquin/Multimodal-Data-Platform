@@ -28,6 +28,20 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
 
 The function depends on the `PINECONE_API_KEY` environment variable to authorize against Pinecone. It also requires the `GEMINI_API_KEY` to be set in your deployment environment in order to invoke the generative model.
 
+### Querying Refined Clusters
+
+The refine clusters API generates new clusters and increments their `version`. The new cluster documents will be persisted into the `[prefix]_clusters` MongoDB collection.
+
+The clusters collection schema:
+*   `name` (String): The generated name of the cluster.
+*   `description` (String): A detailed description of the cluster's theme.
+*   `summary` (String): A concise summary of the cluster.
+*   `version` (Number): The version of the cluster. Defaults to 1 and increments per refinement.
+*   `centroid` (Array of Numbers): Optional. The PCA-reduced point coordinates of the cluster center.
+*   `createdAt` (Date): The time the cluster was created.
+
+When querying the collections directly, you should sort the clusters by `version` descending (`sort({ version: -1 })`) to get the latest cluster taxonomies, as this reflects the newest output from the refine clusters operation. Item documents in `[prefix]_items` retain their original relationships and may contain `reducedDimensions` coordinates that can be plotted with the `centroid` for visualizations.
+
 ### Agent Prompt
 
 If you are an LLM agent or an automated tooling developer, you can quickly write integration code by copying the prompt below and sending it to your agent:
