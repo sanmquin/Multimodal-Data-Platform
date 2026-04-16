@@ -5,7 +5,7 @@ import { evaluateFeatures } from '../evaluateFeatures';
 import { embedAndReduce } from '../embedAndReduce';
 import { Feature, TextFeatureEvaluation, TextRecord } from '../types';
 import { connectMongoose } from '../mongo';
-import { getMongooseModels } from '../models';
+import { getFeatureModels } from '../models';
 
 export interface FeaturePipelineOptions {
   texts: TextRecord[];
@@ -84,7 +84,7 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, fe
   try {
     if (!(await connectMongoose(mongoDb))) return;
 
-    const { FeatureModel, EvaluationModel, PCAModel, LinearRegressionModel } = getMongooseModels(mongoCollection);
+    const { FeatureModel, EvaluationModel, PCAModel, LinearRegressionModel } = getFeatureModels(mongoCollection);
 
     if (features && features.length > 0) {
       await FeatureModel.insertMany(features);
