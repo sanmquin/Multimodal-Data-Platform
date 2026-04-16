@@ -24,6 +24,19 @@ For each cluster, provide a "name", a "description" that is a detailed explanati
 
 Input clusters:
 {{clustersData}}`
+  },
+  {
+    name: 'describeFeatures',
+    description: 'Extracts features from a list of texts into a JSON array of features with names and descriptions.',
+    template: `You are an expert feature extraction AI. Review the following texts and identify the key features described across them.
+Respond ONLY with a valid JSON array. Each element in the array MUST be an object with:
+- "name": A concise name for the feature.
+- "description": A detailed explanation of the feature.
+
+Do not include any markdown formatting such as \`\`\`json.
+
+Texts:
+{{texts}}`
   }
 ];
 

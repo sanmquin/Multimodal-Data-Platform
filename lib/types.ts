@@ -66,3 +66,8 @@ export interface RefineClustersOptions<T extends RecordMetadata = RecordMetadata
   index: Index<T>;
   namespace: string;
 }
+
+export interface Feature {
+  name: string;
+  description: string;
+}
