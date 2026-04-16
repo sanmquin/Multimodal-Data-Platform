@@ -1,3 +1,4 @@
+import { PCA } from 'ml-pca';
 import { mean } from 'simple-statistics';
 
 /**
@@ -79,4 +80,21 @@ export function customKMeans(points: number[][], k: number): { labels: number[],
   }
 
   return { labels, centroids };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function applyPCAIfRequested(points: number[][], reduceDimensions: boolean, pcaDimensions: number): { finalPoints: number[][], pcaModelJson: any } {
+  let finalPoints = points;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let pcaModelJson: any = undefined;
+
+  if (reduceDimensions && points.length > 0 && points[0].length > 0) {
+    const pca = new PCA(points);
+    const nComponents = Math.min(pcaDimensions, pca.getExplainedVariance().length);
+    if (nComponents > 0) {
+      finalPoints = pca.predict(points, { nComponents }).to2DArray();
+      pcaModelJson = pca.toJSON();
+    }
+  }
+  return { finalPoints, pcaModelJson };
 }

@@ -11,3 +11,4 @@ export * from './refineClusters';
 export * from './prompts';
 export * from './describeFeatures';
 export * from './evaluateFeatures';
+export * from './pipelines';
