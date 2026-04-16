@@ -10,3 +10,4 @@ export * from './embedAndCluster';
 export * from './refineClusters';
 export * from './prompts';
 export * from './describeFeatures';
+export * from './evaluateFeatures';

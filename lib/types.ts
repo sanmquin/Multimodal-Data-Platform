@@ -71,3 +71,13 @@ export interface Feature {
   name: string;
   description: string;
 }
+
+export interface FeatureEvaluation {
+  featureName: string;
+  score: number;
+}
+
+export interface TextFeatureEvaluation {
+  text: string;
+  evaluations: FeatureEvaluation[];
+}
