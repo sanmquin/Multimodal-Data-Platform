@@ -5,6 +5,7 @@ import { getMongooseModels } from './models';
 import { geminiGenerateJson } from './gemini';
 import { mean } from 'simple-statistics';
 import { euclideanDistance } from './utils';
+import { getPrompt } from './prompts';
 
 async function getRepresentativeTexts<T extends RecordMetadata>(
   items: { textId: string, reducedPoints?: number[] }[],
@@ -85,16 +86,8 @@ async function fetchClusterData<T extends RecordMetadata>(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function generateRefinedClusters(clustersData: any[]) {
-  const prompt = `
-You are an expert taxonomist. Review the following clusters and their representative texts.
-Please refine them into a Mutually Exclusive, Collectively Exhaustive (MECE) set of clusters.
-You may merge similar clusters or split broad clusters.
-Additionally, you MUST include one cluster named "Miscellaneous/Unknown" to catch outliers.
-For each cluster, provide a "name", "description", and a short "summary".
-
-Input clusters:
-${JSON.stringify(clustersData, null, 2)}
-`;
+  let prompt = getPrompt('refineClusters') || '';
+  prompt = prompt.replace('{{clustersData}}', JSON.stringify(clustersData, null, 2));
 
   const schema = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
