@@ -12,3 +12,4 @@ export * from './prompts';
 export * from './describeFeatures';
 export * from './evaluateFeatures';
 export * from './pipelines';
+export * from './embedAndReduce';

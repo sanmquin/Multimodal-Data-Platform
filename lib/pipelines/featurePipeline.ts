@@ -1,71 +1,69 @@
+import { Pinecone } from '@pinecone-database/pinecone';
 import { describeFeatures } from '../describeFeatures';
 import { evaluateFeatures } from '../evaluateFeatures';
-import { applyPCAIfRequested } from '../utils';
+import { embedAndReduce } from '../embedAndReduce';
+import { Feature, TextFeatureEvaluation, TextRecord } from '../types';
 
 export interface FeaturePipelineOptions {
   texts: string[];
+  embedder?: (texts: string[]) => Promise<number[][]>;
+  pc?: Pinecone;
+  model?: string;
   reduceDimensions?: boolean;
   pcaDimensions?: number;
 }
 
 export interface FeaturePipelineResult {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  pcaModelJson: any;
+  records: TextRecord[];
+  features: Feature[];
+  evaluations: TextFeatureEvaluation[];
   points: number[][];
   reducedPoints: number[][];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  pcaModelJson: any;
 }
 
 /**
  * A pipeline that extracts features from texts, evaluates them,
- * and reduces the dimensionality of the resulting embeddings.
+ * and generates and reduces embeddings for the texts.
  *
  * @param options - Options for the feature pipeline.
- * @returns A promise resolving to the final points and PCA model.
+ * @returns A promise resolving to the pipeline results.
  */
 export async function featurePipeline(
   options: FeaturePipelineOptions
 ): Promise<FeaturePipelineResult> {
-  const { texts, reduceDimensions = true, pcaDimensions = 20 } = options;
+  const { texts, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20 } = options;
 
   if (!texts || texts.length === 0) {
-    return { points: [], reducedPoints: [], pcaModelJson: undefined };
+    return { records: [], features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
   }
+
+  // Generate IDs for texts
+  const records: TextRecord[] = texts.map((text, i) => ({
+    id: String(i + 1),
+    text
+  }));
 
   // 1. Describe the texts to find the features
   const features = await describeFeatures(texts);
 
   if (!features || features.length === 0) {
-    return { points: [], reducedPoints: [], pcaModelJson: undefined };
+    return { records, features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
   }
 
   // 2. Evaluate the texts to get numerical quantification of features
   const evaluations = await evaluateFeatures(texts, features);
 
-  // 3. Construct embeddings from the evaluations by aligning the scores
-  const points: number[][] = [];
-  const featureNames = features.map((f) => f.name);
-
-  for (const text of texts) {
-    const textEval = evaluations.find((e) => e.text === text);
-    const point: number[] = [];
-
-    for (const featureName of featureNames) {
-      if (textEval && textEval.evaluations) {
-        const featEval = textEval.evaluations.find((e) => e.featureName === featureName);
-        point.push(featEval ? featEval.score : 0);
-      } else {
-        point.push(0);
-      }
-    }
-    points.push(point);
-  }
-
-  // 4. Reduce dimensions using the common utility
-  const { finalPoints, pcaModelJson } = applyPCAIfRequested(
-    points,
+  // 3. Generate embeddings and reduce dimensions using the common utility
+  const { points, reducedPoints, pcaModelJson } = await embedAndReduce({
+    texts,
+    embedder,
+    pc,
+    model,
     reduceDimensions,
     pcaDimensions
-  );
+  });
 
-  return { points, reducedPoints: finalPoints, pcaModelJson };
+  return { records, features, evaluations, points, reducedPoints, pcaModelJson };
 }
