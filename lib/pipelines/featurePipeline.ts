@@ -4,6 +4,8 @@ import { describeFeatures } from '../describeFeatures';
 import { evaluateFeatures } from '../evaluateFeatures';
 import { embedAndReduce } from '../embedAndReduce';
 import { Feature, TextFeatureEvaluation, TextRecord } from '../types';
+import { connectMongoose } from '../mongo';
+import { getMongooseModels } from '../models';
 
 export interface FeaturePipelineOptions {
   texts: TextRecord[];
@@ -12,6 +14,8 @@ export interface FeaturePipelineOptions {
   model?: string;
   reduceDimensions?: boolean;
   pcaDimensions?: number;
+  mongoDb?: string;
+  mongoCollection?: string;
 }
 
 export interface FeaturePipelineResult {
@@ -35,7 +39,7 @@ export interface FeaturePipelineResult {
 export async function featurePipeline(
   options: FeaturePipelineOptions
 ): Promise<FeaturePipelineResult> {
-  const { texts, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20 } = options;
+  const { texts, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20, mongoDb, mongoCollection } = options;
 
   if (!texts || texts.length === 0) {
     return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
@@ -67,7 +71,40 @@ export async function featurePipeline(
   const X = reduceDimensions && reducedPoints && reducedPoints.length > 0 ? reducedPoints : points;
   const regressionModelJson = trainAndEvaluateRegression(X, evaluations, features);
 
+  // 5. Store to MongoDB if configured
+  if (mongoDb && mongoCollection) {
+    await storeFeaturesToMongo(mongoDb, mongoCollection, features, evaluations, pcaModelJson, regressionModelJson);
+  }
+
   return { features, evaluations, points, reducedPoints, pcaModelJson, regressionModelJson };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, features: Feature[], evaluations: TextFeatureEvaluation[], pcaModelJson: any, regressionModelJson: any) {
+  try {
+    if (!(await connectMongoose(mongoDb))) return;
+
+    const { FeatureModel, EvaluationModel, PCAModel, LinearRegressionModel } = getMongooseModels(mongoCollection);
+
+    if (features && features.length > 0) {
+      await FeatureModel.insertMany(features);
+    }
+
+    if (evaluations && evaluations.length > 0) {
+      await EvaluationModel.insertMany(evaluations);
+    }
+
+    if (pcaModelJson) {
+      await PCAModel.create({ modelBuffer: Buffer.from(JSON.stringify(pcaModelJson), 'utf-8') });
+    }
+
+    if (regressionModelJson) {
+      await LinearRegressionModel.create({ modelBuffer: Buffer.from(JSON.stringify(regressionModelJson), 'utf-8') });
+    }
+
+  } catch (err) {
+    console.error('Failed to store features pipeline results to Mongo:', err);
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
