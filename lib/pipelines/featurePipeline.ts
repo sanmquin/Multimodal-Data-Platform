@@ -16,7 +16,7 @@ export interface FeaturePipelineOptions {
   pcaDimensions?: number;
   mongoDb?: string;
   mongoCollection?: string;
-  categoryId?: string;
+  categoryId: string;
 }
 
 export interface FeaturePipelineResult {
@@ -79,7 +79,7 @@ export async function featurePipeline(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, features: Feature[], evaluations: TextFeatureEvaluation[], pcaModelJson: any, categoryId?: string, texts?: TextRecord[]) {
+async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, features: Feature[], evaluations: TextFeatureEvaluation[], pcaModelJson: any, categoryId: string, texts?: TextRecord[]) {
   try {
     if (!(await connectMongoose(mongoDb))) return;
 
