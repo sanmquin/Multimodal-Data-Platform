@@ -20,7 +20,8 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
   "reduceDimensions": {{REDUCE_DIMENSIONS}},
   "pcaDimensions": {{PCA_DIMENSIONS}},
   "mongoDb": "{{MONGO_DB}}",
-  "mongoCollection": "{{MONGO_COLLECTION}}"
+  "mongoCollection": "{{MONGO_COLLECTION}}",
+  "categoryId": "{{CATEGORY_ID}}"
 }
 ```
 
@@ -30,6 +31,7 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
 - **pcaDimensions**: The target number of dimensions for PCA reduction. Defaults to 20.
 - **mongoDb**: The name of the MongoDB database where features, evaluations, PCA models, and linear regression models should be saved.
 - **mongoCollection**: The prefix for the MongoDB collections to save into.
+- **categoryId**: Optional identifier used to associate the generated features, evaluations, and models with a specific batch or category of texts.
 
 ### Environment Setup
 
@@ -42,15 +44,19 @@ If you provide the `mongoDb` and `mongoCollection` parameters in your payload, t
 Data is stored in four separate collections based on the `mongoCollection` prefix you provide:
 
 1.  **`[prefix]_pca`**: Stores the PCA model used for dimensionality reduction.
+    *   `categoryId` (String): The associated category identifier.
     *   `modelBuffer` (Buffer): The serialized PCA model.
     *   `createdAt` (Date): The time the model was saved.
 
 2.  **`[prefix]_features`**: Stores the descriptive features generated from the text snippets.
+    *   `categoryId` (String): The associated category identifier.
     *   `name` (String): The generated name of the feature.
     *   `description` (String): A detailed description of the feature.
     *   `createdAt` (Date): The time the feature was created.
 
 3.  **`[prefix]_evaluations`**: Stores the numerical evaluation of each text against the identified features.
+    *   `categoryId` (String): The associated category identifier.
+    *   `textId` (String): The ID of the original text snippet.
     *   `text` (String): The original text content.
     *   `evaluations` (Array of Objects): The evaluations for this text.
         *   `featureName` (String): The name of the feature evaluated.
@@ -58,6 +64,7 @@ Data is stored in four separate collections based on the `mongoCollection` prefi
     *   `createdAt` (Date): The time the evaluation was created.
 
 4.  **`[prefix]_linear_regression`**: Stores the trained multivariate linear regression model mapping embeddings to feature evaluations.
+    *   `categoryId` (String): The associated category identifier.
     *   `modelBuffer` (Buffer): The serialized linear regression model.
     *   `createdAt` (Date): The time the model was saved.
 
@@ -86,7 +93,8 @@ Please write code to integrate the multimodal data platform features background 
   "reduceDimensions": {{REDUCE_DIMENSIONS}},
   "pcaDimensions": {{PCA_DIMENSIONS}},
   "mongoDb": "{{MONGO_DB}}",
-  "mongoCollection": "{{MONGO_COLLECTION}}"
+  "mongoCollection": "{{MONGO_COLLECTION}}",
+  "categoryId": "{{CATEGORY_ID}}"
 }
 ```
 
@@ -99,6 +107,7 @@ Please write code to integrate the multimodal data platform features background 
 *   `pcaDimensions` (*Optional*): Number of dimensions to reduce to. Defaults to 20.
 *   `mongoDb` (*Optional*): The name of the MongoDB database where the output data should be saved.
 *   `mongoCollection` (*Optional*): The prefix for the MongoDB collections to save into (e.g. `[prefix]_pca`, `[prefix]_features`, `[prefix]_evaluations`, `[prefix]_linear_regression`). Required if `mongoDb` is specified.
+*   `categoryId` (*Optional*): Identifier to associate generated features, evaluations, and models with a specific text batch.
 
 #### Response
 

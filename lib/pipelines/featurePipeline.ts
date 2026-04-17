@@ -85,18 +85,14 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, fe
   try {
     if (!(await connectMongoose(mongoDb))) return;
 
-    const { FeatureModel, EvaluationModel, PCAModel } = getFeatureModels(mongoCollection);
+    const { FeatureModel, EvaluationModel, PCAModel, LinearRegressionModel } = getFeatureModels(mongoCollection);
 
     if (features && features.length > 0) {
-      await FeatureModel.create({
-        categoryId,
-        features,
-        model: regressionModelJson
-      });
+      const enrichedFeatures = features.map(f => ({ ...f, categoryId }));
+      await FeatureModel.insertMany(enrichedFeatures);
     }
 
     if (evaluations && evaluations.length > 0) {
-      // Enrich evaluations with categoryId and textId
       const enrichedEvaluations = evaluations.map((ev) => {
         const textRecord = texts?.find((t) => t.text === ev.text);
         return {
@@ -109,7 +105,11 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, fe
     }
 
     if (pcaModelJson) {
-      await PCAModel.create({ categoryId, model: pcaModelJson });
+      await PCAModel.create({ categoryId, modelBuffer: Buffer.from(JSON.stringify(pcaModelJson), 'utf-8') });
+    }
+
+    if (regressionModelJson) {
+      await LinearRegressionModel.create({ categoryId, modelBuffer: Buffer.from(JSON.stringify(regressionModelJson), 'utf-8') });
     }
 
   } catch (err) {

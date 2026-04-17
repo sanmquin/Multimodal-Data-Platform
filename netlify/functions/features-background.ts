@@ -32,7 +32,7 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[features-background function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts, model, reduceDimensions, pcaDimensions, mongoCollection, categoryId } = parsedBody;
+    const { texts, model, reduceDimensions, pcaDimensions, mongoCollection } = parsedBody;
     const mongoDb = parsedBody.mongoDb?.toLowerCase();
 
     if (!texts || !Array.isArray(texts)) {
@@ -62,8 +62,7 @@ export const handler: Handler = async (event) => {
       reduceDimensions,
       pcaDimensions,
       mongoDb,
-      mongoCollection,
-      categoryId
+      mongoCollection
     };
 
     console.log(`[features-background function] Calling featurePipeline() logic...`);
