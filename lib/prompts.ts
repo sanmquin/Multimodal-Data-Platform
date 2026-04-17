@@ -42,7 +42,7 @@ Texts:
     name: 'evaluateFeatures',
     description: 'Evaluates how well given features describe a list of texts.',
     template: `You are an expert feature evaluation AI. Review the following texts and evaluate how well each of the provided features describes each text.
-For each text, assign a numerical score (e.g., from 0.0 to 1.0, or 0 to 100) indicating the relevance or presence of each feature.
+For each text, assign a numerical score (from 0 to 100) indicating the relevance or presence of each feature.
 Respond ONLY with a valid JSON array. Each element in the array MUST represent a text and its feature evaluations:
 - "text": The text being evaluated.
 - "evaluations": An array of objects, each containing:

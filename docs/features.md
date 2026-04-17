@@ -54,6 +54,8 @@ Data is stored in three separate collections based on the `mongoCollection` pref
         *   `name` (String): The generated name of the feature.
         *   `description` (String): A detailed description of the feature.
     *   `modelBuffer` (Buffer): The serialized trained multivariate linear regression model mapping embeddings to feature evaluations.
+    *   `error` (Number): The Mean Squared Error of the trained regression model.
+    *   `averageValue` (Number): The average numerical evaluation assigned across all text features.
     *   `createdAt` (Date): The time the feature was created.
 
 3.  **`[prefix]_evaluations`**: Stores the numerical evaluation of each text against the identified features.

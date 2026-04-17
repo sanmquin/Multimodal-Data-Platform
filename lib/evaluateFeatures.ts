@@ -13,23 +13,31 @@ export async function evaluateFeatures(
   texts: string[],
   features: Feature[]
 ): Promise<TextFeatureEvaluation[]> {
-  let prompt = getPrompt('evaluateFeatures') || '';
-  prompt = prompt.replace('{{features}}', JSON.stringify(features, null, 2));
-  prompt = prompt.replace('{{texts}}', JSON.stringify(texts, null, 2));
+  const basePrompt = getPrompt('evaluateFeatures') || '';
+  const batchSize = 10;
+  let allEvaluations: TextFeatureEvaluation[] = [];
 
-  try {
-    const response = await gemmaGenerate(prompt, {
-      systemInstruction: "You are an expert feature evaluation AI. Always output raw, valid JSON. Only return a JSON array."
-    });
+  for (let i = 0; i < texts.length; i += batchSize) {
+    const batchTexts = texts.slice(i, i + batchSize);
+    let prompt = basePrompt.replace('{{features}}', JSON.stringify(features, null, 2));
+    prompt = prompt.replace('{{texts}}', JSON.stringify(batchTexts, null, 2));
 
-    let text = response.text.trim();
-    if (text.startsWith('```json')) text = text.substring(7);
-    if (text.startsWith('```')) text = text.substring(3);
-    if (text.endsWith('```')) text = text.slice(0, -3);
+    try {
+      const response = await gemmaGenerate(prompt, {
+        systemInstruction: "You are an expert feature evaluation AI. Always output raw, valid JSON. Only return a JSON array."
+      });
 
-    return JSON.parse(text.trim()) as TextFeatureEvaluation[];
-  } catch (error) {
-    console.error("Failed to evaluate features:", error);
-    return [];
+      let text = response.text.trim();
+      if (text.startsWith('```json')) text = text.substring(7);
+      if (text.startsWith('```')) text = text.substring(3);
+      if (text.endsWith('```')) text = text.slice(0, -3);
+
+      const evaluations = JSON.parse(text.trim()) as TextFeatureEvaluation[];
+      allEvaluations = allEvaluations.concat(evaluations);
+    } catch (error) {
+      console.error(`Failed to evaluate features for batch starting at ${i}:`, error);
+    }
   }
+
+  return allEvaluations;
 }
