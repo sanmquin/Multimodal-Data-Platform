@@ -40,11 +40,11 @@ export function getFeatureModels(mongoCollection: string) {
     categoryId: String,
     features: [{
       name: String,
-      description: String
+      description: String,
+      modelBuffer: Buffer,
+      error: Number,
+      averageValue: Number
     }],
-    modelBuffer: Buffer,
-    error: Number,
-    averageValue: Number,
     createdAt: { type: Date, default: Date.now }
   });
 
