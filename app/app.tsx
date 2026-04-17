@@ -24,6 +24,7 @@ const configSchema: Record<string, ConfigDefinition> = {
   CUMULATIVE: { type: 'boolean', default: 'false', label: 'Cumulative' },
   STORE_REDUCED_DIMENSIONS: { type: 'boolean', default: 'true', label: 'Store Reduced Dimensions' },
   REDUCE_DIMENSIONS: { type: 'boolean', default: 'true', label: 'Reduce Dimensions' },
+  CATEGORY_ID: { type: 'text', default: 'batch-123', label: 'Category ID' },
 };
 
 const App = () => {
