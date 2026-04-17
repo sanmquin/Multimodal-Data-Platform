@@ -78,6 +78,7 @@ export interface FeatureEvaluation {
 }
 
 export interface TextFeatureEvaluation {
+  textId?: string;
   text: string;
   evaluations: FeatureEvaluation[];
 }

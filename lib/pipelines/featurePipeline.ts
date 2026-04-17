@@ -16,6 +16,7 @@ export interface FeaturePipelineOptions {
   pcaDimensions?: number;
   mongoDb?: string;
   mongoCollection?: string;
+  categoryId?: string;
 }
 
 export interface FeaturePipelineResult {
@@ -39,7 +40,7 @@ export interface FeaturePipelineResult {
 export async function featurePipeline(
   options: FeaturePipelineOptions
 ): Promise<FeaturePipelineResult> {
-  const { texts, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20, mongoDb, mongoCollection } = options;
+  const { texts, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20, mongoDb, mongoCollection, categoryId } = options;
 
   if (!texts || texts.length === 0) {
     return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
@@ -73,33 +74,42 @@ export async function featurePipeline(
 
   // 5. Store to MongoDB if configured
   if (mongoDb && mongoCollection) {
-    await storeFeaturesToMongo(mongoDb, mongoCollection, features, evaluations, pcaModelJson, regressionModelJson);
+    await storeFeaturesToMongo(mongoDb, mongoCollection, features, evaluations, pcaModelJson, regressionModelJson, categoryId, texts);
   }
 
   return { features, evaluations, points, reducedPoints, pcaModelJson, regressionModelJson };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, features: Feature[], evaluations: TextFeatureEvaluation[], pcaModelJson: any, regressionModelJson: any) {
+async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, features: Feature[], evaluations: TextFeatureEvaluation[], pcaModelJson: any, regressionModelJson: any, categoryId?: string, texts?: TextRecord[]) {
   try {
     if (!(await connectMongoose(mongoDb))) return;
 
-    const { FeatureModel, EvaluationModel, PCAModel, LinearRegressionModel } = getFeatureModels(mongoCollection);
+    const { FeatureModel, EvaluationModel, PCAModel } = getFeatureModels(mongoCollection);
 
     if (features && features.length > 0) {
-      await FeatureModel.insertMany(features);
+      await FeatureModel.create({
+        categoryId,
+        features,
+        model: regressionModelJson
+      });
     }
 
     if (evaluations && evaluations.length > 0) {
-      await EvaluationModel.insertMany(evaluations);
+      // Enrich evaluations with categoryId and textId
+      const enrichedEvaluations = evaluations.map((ev) => {
+        const textRecord = texts?.find((t) => t.text === ev.text);
+        return {
+          ...ev,
+          categoryId,
+          textId: textRecord ? textRecord.id : undefined
+        };
+      });
+      await EvaluationModel.insertMany(enrichedEvaluations);
     }
 
     if (pcaModelJson) {
-      await PCAModel.create({ modelBuffer: Buffer.from(JSON.stringify(pcaModelJson), 'utf-8') });
-    }
-
-    if (regressionModelJson) {
-      await LinearRegressionModel.create({ modelBuffer: Buffer.from(JSON.stringify(regressionModelJson), 'utf-8') });
+      await PCAModel.create({ categoryId, model: pcaModelJson });
     }
 
   } catch (err) {
