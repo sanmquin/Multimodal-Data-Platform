@@ -132,7 +132,7 @@ function trainAndEvaluateRegression(X: number[][], evaluations: TextFeatureEvalu
   const Y = evaluations.map((evalObj) => {
     return features.map((f) => {
       const featEval = evalObj.evaluations.find((ev) => ev.featureName === f.name);
-      return featEval ? featEval.score : 0;
+      return featEval && featEval.score !== undefined ? featEval.score : 0;
     });
   });
 
