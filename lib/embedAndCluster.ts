@@ -64,7 +64,7 @@ async function storeToMongo(mongoDb: string, mongoCollection: string, pcaModel: 
     if (!(await connectMongoose(mongoDb))) return;
 
     const { PCAModel, ClusterModel, ItemModel } = getMongooseModels(mongoCollection);
-    await PCAModel.create({ modelBuffer: Buffer.from(JSON.stringify(pcaModel), 'utf-8') });
+    await PCAModel.create({ model: pcaModel && typeof pcaModel.toJSON === 'function' ? pcaModel.toJSON() : pcaModel });
 
     for (const nc of namedClusters) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
