@@ -16,11 +16,11 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
     { "id": "1", "text": "Learning machine learning algorithms requires strong mathematical foundations." },
     { "id": "2", "text": "The new cloud infrastructure scales automatically based on traffic." }
   ],
-  "model": "multilingual-e5-large",
-  "reduceDimensions": true,
-  "pcaDimensions": 20,
+  "model": "{{MODEL}}",
+  "reduceDimensions": {{REDUCE_DIMENSIONS}},
+  "pcaDimensions": {{PCA_DIMENSIONS}},
   "mongoDb": "{{MONGO_DB}}",
-  "mongoCollection": "my_collection_prefix"
+  "mongoCollection": "{{MONGO_COLLECTION}}"
 }
 ```
 
@@ -82,11 +82,11 @@ Please write code to integrate the multimodal data platform features background 
   "texts": [
     { "id": "string", "text": "string" }
   ],
-  "model": "string",
-  "reduceDimensions": "boolean",
-  "pcaDimensions": "number",
+  "model": "{{MODEL}}",
+  "reduceDimensions": {{REDUCE_DIMENSIONS}},
+  "pcaDimensions": {{PCA_DIMENSIONS}},
   "mongoDb": "{{MONGO_DB}}",
-  "mongoCollection": "string"
+  "mongoCollection": "{{MONGO_COLLECTION}}"
 }
 ```
 

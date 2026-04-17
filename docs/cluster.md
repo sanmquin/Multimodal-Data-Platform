@@ -16,16 +16,16 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
     { "id": "1", "text": "Testing the cloud background cluster." },
     { "id": "2", "text": "Another text to be clustered seamlessly." }
   ],
-  "numClusters": 2,
-  "batchSize": 50,
+  "numClusters": {{NUM_CLUSTERS}},
+  "batchSize": {{BATCH_SIZE}},
   "indexName": "{{PINECONE_INDEX}}",
-  "namespace": "your-namespace",
-  "skipEmbed": false,
+  "namespace": "{{NAMESPACE}}",
+  "skipEmbed": {{SKIP_EMBED}},
   "mongoDb": "{{MONGO_DB}}",
-  "mongoCollection": "my_collection_prefix",
-  "cumulative": false,
-  "context": "General overarching context for the clustering task.",
-  "storeReducedDimensions": true
+  "mongoCollection": "{{MONGO_COLLECTION}}",
+  "cumulative": {{CUMULATIVE}},
+  "context": "{{CONTEXT}}",
+  "storeReducedDimensions": {{STORE_REDUCED_DIMENSIONS}}
 }
 ```
 
@@ -86,16 +86,16 @@ Please write code to integrate the multimodal data platform cluster background A
   "texts": [
     { "id": "string", "text": "string" }
   ],
-  "numClusters": "number",
-  "batchSize": "number",
+  "numClusters": {{NUM_CLUSTERS}},
+  "batchSize": {{BATCH_SIZE}},
   "indexName": "{{PINECONE_INDEX}}",
-  "namespace": "string",
-  "skipEmbed": "boolean",
+  "namespace": "{{NAMESPACE}}",
+  "skipEmbed": {{SKIP_EMBED}},
   "mongoDb": "{{MONGO_DB}}",
-  "mongoCollection": "string",
-  "cumulative": "boolean",
-  "context": "string",
-  "storeReducedDimensions": "boolean"
+  "mongoCollection": "{{MONGO_COLLECTION}}",
+  "cumulative": {{CUMULATIVE}},
+  "context": "{{CONTEXT}}",
+  "storeReducedDimensions": {{STORE_REDUCED_DIMENSIONS}}
 }
 ```
 
