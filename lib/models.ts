@@ -43,6 +43,8 @@ export function getFeatureModels(mongoCollection: string) {
       description: String
     }],
     modelBuffer: Buffer,
+    error: Number,
+    averageValue: Number,
     createdAt: { type: Date, default: Date.now }
   });
 
