@@ -28,6 +28,8 @@ export interface FeaturePipelineResult {
   pcaModelJson: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   regressionModelJson?: any;
+  error?: number;
+  averageValue?: number;
 }
 
 /**
@@ -70,18 +72,21 @@ export async function featurePipeline(
 
   // 4. Train a linear regression to predict features from embeddings
   const X = reduceDimensions && reducedPoints && reducedPoints.length > 0 ? reducedPoints : points;
-  const regressionModelJson = trainAndEvaluateRegression(X, evaluations, features);
+  const regressionResult = trainAndEvaluateRegression(X, evaluations, features);
+  const regressionModelJson = regressionResult?.model;
+  const error = regressionResult?.error;
+  const averageValue = regressionResult?.averageValue;
 
   // 5. Store to MongoDB if configured
   if (mongoDb && mongoCollection) {
-    await storeFeaturesToMongo(mongoDb, mongoCollection, features, evaluations, pcaModelJson, regressionModelJson, categoryId, texts);
+    await storeFeaturesToMongo(mongoDb, mongoCollection, features, evaluations, pcaModelJson, regressionModelJson, error, averageValue, categoryId, texts);
   }
 
-  return { features, evaluations, points, reducedPoints, pcaModelJson, regressionModelJson };
+  return { features, evaluations, points, reducedPoints, pcaModelJson, regressionModelJson, error, averageValue };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, features: Feature[], evaluations: TextFeatureEvaluation[], pcaModelJson: any, regressionModelJson: any, categoryId?: string, texts?: TextRecord[]) {
+async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, features: Feature[], evaluations: TextFeatureEvaluation[], pcaModelJson: any, regressionModelJson: any, error?: number, averageValue?: number, categoryId?: string, texts?: TextRecord[]) {
   try {
     if (!(await connectMongoose(mongoDb))) return;
 
@@ -91,7 +96,9 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, fe
       await FeatureModel.create({
         categoryId,
         features,
-        modelBuffer: regressionModelJson ? Buffer.from(JSON.stringify(regressionModelJson), 'utf-8') : undefined
+        modelBuffer: regressionModelJson ? Buffer.from(JSON.stringify(regressionModelJson), 'utf-8') : undefined,
+        error,
+        averageValue
       });
     }
 
@@ -117,7 +124,7 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, fe
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function trainAndEvaluateRegression(X: number[][], evaluations: TextFeatureEvaluation[], features: Feature[]): any {
+function trainAndEvaluateRegression(X: number[][], evaluations: TextFeatureEvaluation[], features: Feature[]): { model: any, error: number, averageValue: number } | undefined {
   if (!X || X.length === 0 || evaluations.length !== X.length || features.length === 0) {
     return undefined;
   }
@@ -134,15 +141,18 @@ function trainAndEvaluateRegression(X: number[][], evaluations: TextFeatureEvalu
 
   let mse = 0;
   let totalElements = 0;
+  let sumY = 0;
   for (let i = 0; i < Y.length; i++) {
     for (let j = 0; j < Y[i].length; j++) {
       const diff = Y[i][j] - yPred[i][j];
       mse += diff * diff;
+      sumY += Y[i][j];
       totalElements++;
     }
   }
   mse = totalElements > 0 ? mse / totalElements : 0;
-  console.log(`Training error (MSE): ${mse}`);
+  const averageValue = totalElements > 0 ? sumY / totalElements : 0;
+  console.log(`Training error (MSE): ${mse}, Average value: ${averageValue}`);
 
-  return mlr.toJSON();
+  return { model: mlr.toJSON(), error: mse, averageValue };
 }
