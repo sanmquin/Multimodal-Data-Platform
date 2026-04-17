@@ -48,14 +48,14 @@ Data is stored in three separate collections based on the `mongoCollection` pref
     *   `modelBuffer` (Buffer): The serialized PCA model.
     *   `createdAt` (Date): The time the model was saved.
 
-2.  **`[prefix]_features`**: Stores the descriptive features generated from the text snippets along with their associated regression model.
+2.  **`[prefix]_features`**: Stores the descriptive features generated from the text snippets along with their associated regression models.
     *   `categoryId` (String): The associated category identifier.
     *   `features` (Array of Objects): The generated features.
         *   `name` (String): The generated name of the feature.
         *   `description` (String): A detailed description of the feature.
-    *   `modelBuffer` (Buffer): The serialized trained multivariate linear regression model mapping embeddings to feature evaluations.
-    *   `error` (Number): The Mean Squared Error of the trained regression model.
-    *   `averageValue` (Number): The average numerical evaluation assigned across all text features.
+        *   `modelBuffer` (Buffer): The serialized trained multivariate linear regression model mapping embeddings to feature evaluations for this specific feature.
+        *   `error` (Number): The Mean Squared Error of the trained regression model for this feature.
+        *   `averageValue` (Number): The average numerical evaluation assigned across texts for this feature.
     *   `createdAt` (Date): The time the feature was created.
 
 3.  **`[prefix]_evaluations`**: Stores the numerical evaluation of each text against the identified features.
@@ -65,6 +65,7 @@ Data is stored in three separate collections based on the `mongoCollection` pref
     *   `evaluations` (Array of Objects): The evaluations for this text.
         *   `featureName` (String): The name of the feature evaluated.
         *   `score` (Number): The numerical score assigned to the text for this feature.
+        *   `inferenceValue` (Number): The numerical score inferred by the trained regression model for this feature.
     *   `createdAt` (Date): The time the evaluation was created.
 
 ### Agent Prompt
