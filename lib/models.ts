@@ -31,13 +31,13 @@ export function getMongooseModels(mongoCollection: string) {
 
 export function getFeatureModels(mongoCollection: string) {
   const pcaSchema = new mongoose.Schema({
-    categoryId: String,
+    categoryId: { type: String, required: true },
     modelBuffer: Buffer,
     createdAt: { type: Date, default: Date.now }
   });
 
   const featureSchema = new mongoose.Schema({
-    categoryId: String,
+    categoryId: { type: String, required: true },
     name: String,
     description: String,
     modelBuffer: Buffer,
@@ -47,7 +47,7 @@ export function getFeatureModels(mongoCollection: string) {
   });
 
   const evaluationSchema = new mongoose.Schema({
-    categoryId: String,
+    categoryId: { type: String, required: true },
     textId: String,
     text: String,
     evaluations: [{

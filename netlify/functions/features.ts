@@ -30,7 +30,7 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[features function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts } = parsedBody;
+    const { texts, categoryId } = parsedBody;
 
     if (!texts || !Array.isArray(texts)) {
       console.warn(`[features function] Validation failed: texts array is required.`);
@@ -40,6 +40,21 @@ export const handler: Handler = async (event) => {
         body: JSON.stringify({ error: 'texts array is required' })
       };
     }
+
+    if (!categoryId) {
+      console.warn(`[features function] Validation failed: categoryId is required.`);
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'categoryId is required' })
+      };
+    } else {
+      return {
+        statusCode: 202,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'categoryId was defined' })
+      };
+		}
 
     console.log(`[features function] Validation passed. Delegating ${texts.length} texts to background function...`);
 
