@@ -38,8 +38,11 @@ export function getFeatureModels(mongoCollection: string) {
 
   const featureSchema = new mongoose.Schema({
     categoryId: String,
-    name: String,
-    description: String,
+    features: [{
+      name: String,
+      description: String
+    }],
+    modelBuffer: Buffer,
     createdAt: { type: Date, default: Date.now }
   });
 
@@ -54,16 +57,9 @@ export function getFeatureModels(mongoCollection: string) {
     createdAt: { type: Date, default: Date.now }
   });
 
-  const linearRegressionSchema = new mongoose.Schema({
-    categoryId: String,
-    modelBuffer: Buffer,
-    createdAt: { type: Date, default: Date.now }
-  });
-
   const PCAModel = mongoose.models[`${mongoCollection}_pca`] || mongoose.model(`${mongoCollection}_pca`, pcaSchema, `${mongoCollection}_pca`);
   const FeatureModel = mongoose.models[`${mongoCollection}_features`] || mongoose.model(`${mongoCollection}_features`, featureSchema, `${mongoCollection}_features`);
   const EvaluationModel = mongoose.models[`${mongoCollection}_evaluations`] || mongoose.model(`${mongoCollection}_evaluations`, evaluationSchema, `${mongoCollection}_evaluations`);
-  const LinearRegressionModel = mongoose.models[`${mongoCollection}_linear_regression`] || mongoose.model(`${mongoCollection}_linear_regression`, linearRegressionSchema, `${mongoCollection}_linear_regression`);
 
-  return { PCAModel, FeatureModel, EvaluationModel, LinearRegressionModel };
+  return { PCAModel, FeatureModel, EvaluationModel };
 }
