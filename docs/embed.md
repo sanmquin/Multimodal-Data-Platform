@@ -15,9 +15,9 @@ You can make an HTTP POST request to:
   "texts": [
     { "id": "1", "text": "Testing the cloud version." }
   ],
-  "batchSize": 50,
+  "batchSize": {{BATCH_SIZE}},
   "indexName": "{{PINECONE_INDEX}}",
-  "namespace": "your-namespace"
+  "namespace": "{{NAMESPACE}}"
 }
 ```
 
@@ -48,9 +48,9 @@ If you are an LLM agent or automated tooling trying to reason about how to call 
   "texts": [
     { "id": "string", "text": "string", "metadata": {} }
   ],
-  "batchSize": "number",
+  "batchSize": {{BATCH_SIZE}},
   "indexName": "{{PINECONE_INDEX}}",
-  "namespace": "string"
+  "namespace": "{{NAMESPACE}}"
 }
 ```
 

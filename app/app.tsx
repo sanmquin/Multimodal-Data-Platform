@@ -1,22 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
+import { prompts } from '../lib/prompts';
+
+type ConfigType = 'text' | 'number' | 'boolean';
+
+interface ConfigDefinition {
+  type: ConfigType;
+  default: string;
+  label: string;
+}
+
+const configSchema: Record<string, ConfigDefinition> = {
+  PINECONE_INDEX: { type: 'text', default: 'your-target-index', label: 'Pinecone Index' },
+  MONGO_DB: { type: 'text', default: 'my_db', label: 'Mongo DB' },
+  NAMESPACE: { type: 'text', default: 'your-namespace', label: 'Namespace' },
+  MONGO_COLLECTION: { type: 'text', default: 'my_collection_prefix', label: 'Mongo Collection' },
+  CONTEXT: { type: 'text', default: 'General overarching context for the clustering task.', label: 'Context' },
+  MODEL: { type: 'text', default: 'multilingual-e5-large', label: 'Model' },
+  NUM_CLUSTERS: { type: 'number', default: '2', label: 'Num Clusters' },
+  BATCH_SIZE: { type: 'number', default: '50', label: 'Batch Size' },
+  PCA_DIMENSIONS: { type: 'number', default: '20', label: 'PCA Dimensions' },
+  SKIP_EMBED: { type: 'boolean', default: 'false', label: 'Skip Embed' },
+  CUMULATIVE: { type: 'boolean', default: 'false', label: 'Cumulative' },
+  STORE_REDUCED_DIMENSIONS: { type: 'boolean', default: 'true', label: 'Store Reduced Dimensions' },
+  REDUCE_DIMENSIONS: { type: 'boolean', default: 'true', label: 'Reduce Dimensions' },
+};
 
 const App = () => {
   const [docsData, setDocsData] = useState<Record<string, string>>({});
   const [rawDocsData, setRawDocsData] = useState<Record<string, string>>({});
   const [activeDoc, setActiveDoc] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'docs' | 'playground'>('docs');
-  const [pineconeIndex, setPineconeIndex] = useState<string>(
-    localStorage.getItem('pineconeIndex') || 'your-target-index'
-  );
-  const [mongoDb, setMongoDb] = useState<string>(
-    localStorage.getItem('mongoDb') || 'my_db'
-  );
+  const [activeTab, setActiveTab] = useState<'docs' | 'playground' | 'prompts'>('docs');
+  const [configValues, setConfigValues] = useState<Record<string, string>>(() => {
+    const initialValues: Record<string, string> = {};
+    Object.keys(configSchema).forEach(key => {
+      initialValues[key] = localStorage.getItem(key) || configSchema[key].default;
+    });
+    return initialValues;
+  });
 
   useEffect(() => {
-    localStorage.setItem('pineconeIndex', pineconeIndex);
-    localStorage.setItem('mongoDb', mongoDb);
-  }, [pineconeIndex, mongoDb]);
+    Object.keys(configValues).forEach(key => {
+      localStorage.setItem(key, configValues[key]);
+    });
+  }, [configValues]);
 
   useEffect(() => {
     fetch('/build/docs.json')
@@ -34,12 +61,19 @@ const App = () => {
     const processedData: Record<string, string> = {};
     Object.keys(rawDocsData).forEach(key => {
       let content = rawDocsData[key].replace(/\{\{DOMAIN\}\}/g, window.location.origin);
-      content = content.replace(/\{\{PINECONE_INDEX\}\}/g, pineconeIndex);
-      content = content.replace(/\{\{MONGO_DB\}\}/g, mongoDb);
+      Object.keys(configSchema).forEach(configKey => {
+        const regex = new RegExp(`\\{\\{${configKey}\\}\\}`, 'g');
+        content = content.replace(regex, configValues[configKey]);
+      });
       processedData[key] = content;
     });
     setDocsData(processedData);
-  }, [rawDocsData, pineconeIndex, mongoDb]);
+  }, [rawDocsData, configValues]);
+
+  const activeDocRawContent = rawDocsData[activeDoc] || '';
+  const usedConfigKeys = Object.keys(configSchema).filter(key =>
+    activeDocRawContent.includes(`{{${key}}}`)
+  );
 
   useEffect(() => {
     const btns = document.querySelectorAll('[id^=copy-agent-btn]');
@@ -78,6 +112,9 @@ const App = () => {
           <li className={activeTab === 'playground' ? 'is-active' : ''}>
             <a onClick={() => setActiveTab('playground')}>Playground</a>
           </li>
+          <li className={activeTab === 'prompts' ? 'is-active' : ''}>
+            <a onClick={() => setActiveTab('prompts')}>Prompts</a>
+          </li>
         </ul>
       </div>
 
@@ -112,29 +149,39 @@ const App = () => {
                 ))}
               </ul>
 
-              <p className="menu-label mt-5">Configuration</p>
-              <div className="field">
-                <label className="label is-small">Pinecone Index</label>
-                <div className="control">
-                  <input
-                    className="input is-small"
-                    type="text"
-                    value={pineconeIndex}
-                    onChange={(e) => setPineconeIndex(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="field">
-                <label className="label is-small">Mongo DB</label>
-                <div className="control">
-                  <input
-                    className="input is-small"
-                    type="text"
-                    value={mongoDb}
-                    onChange={(e) => setMongoDb(e.target.value)}
-                  />
-                </div>
-              </div>
+              {usedConfigKeys.length > 0 && (
+                <>
+                  <p className="menu-label mt-5">Configuration</p>
+                  {usedConfigKeys.map(key => {
+                    const schema = configSchema[key];
+                    return (
+                      <div className="field" key={key}>
+                        <label className="label is-small">{schema.label}</label>
+                        <div className="control">
+                          {schema.type === 'boolean' ? (
+                            <div className="select is-small is-fullwidth">
+                              <select
+                                value={configValues[key]}
+                                onChange={(e) => setConfigValues({ ...configValues, [key]: e.target.value })}
+                              >
+                                <option value="true">true</option>
+                                <option value="false">false</option>
+                              </select>
+                            </div>
+                          ) : (
+                            <input
+                              className="input is-small"
+                              type={schema.type === 'number' ? 'number' : 'text'}
+                              value={configValues[key]}
+                              onChange={(e) => setConfigValues({ ...configValues, [key]: e.target.value })}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
             </aside>
           </div>
           <div className="column">
@@ -144,6 +191,23 @@ const App = () => {
       )}
 
       {activeTab === 'playground' && <Playground />}
+
+      {activeTab === 'prompts' && <PromptsView />}
+    </div>
+  );
+};
+
+const PromptsView = () => {
+  return (
+    <div className="box">
+      <h2 className="subtitle">System Prompts</h2>
+      {prompts.map((prompt) => (
+        <div key={prompt.name} className="content mb-5">
+          <h3 className="is-size-5">{prompt.name}</h3>
+          <p><em>{prompt.description}</em></p>
+          <pre><code>{prompt.template}</code></pre>
+        </div>
+      ))}
     </div>
   );
 };

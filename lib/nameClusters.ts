@@ -1,48 +1,35 @@
 import { ClusterWithTexts, NamedCluster } from './types';
 import { gemmaGenerate } from './gemma';
+import { getPrompt } from './prompts';
 
 async function generateClusterNameAndDesc(
   clusterTexts: string[],
   previousClusters: string[] = [],
   context: string = ""
 ): Promise<{ name: string, description: string, summary: string }> {
-  let promptContext = context ? `${context}\n\n` : "";
+  const promptContext = context ? `${context}\n\n` : "";
   let avoidDuplicationInstructions = "";
 
   if (previousClusters.length > 0) {
     avoidDuplicationInstructions = `\nAvoid duplicating these definitions. The following clusters have already been defined:\n${previousClusters.join('\n')}\n`;
   }
 
-  const prompt = `${promptContext}You are a helpful AI assistant. I will provide you with a list of texts belonging to a single cluster.
-Please analyze the themes and subjects of these texts and provide:
-1. A concise "name" for the cluster.
-2. A "description" of the cluster that includes examples of the items in it.
-3. A short "summary" of the cluster.${avoidDuplicationInstructions}
-
-Respond ONLY with a valid JSON object with keys: "name", "description", and "summary". Do not include markdown formatting like \`\`\`json.
-
-Cluster texts:
-${JSON.stringify(clusterTexts, null, 2)}
-`;
+  let prompt = getPrompt('nameClusters') || '';
+  prompt = prompt.replace('{{context}}', promptContext);
+  prompt = prompt.replace('{{avoidDuplicationInstructions}}', avoidDuplicationInstructions);
+  prompt = prompt.replace('{{clusterTexts}}', JSON.stringify(clusterTexts, null, 2));
 
   try {
     const response = await gemmaGenerate(prompt, {
       systemInstruction: "You are an expert at categorizing text. Always output raw, valid JSON."
     });
 
-    let responseText = response.text.trim();
-    if (responseText.startsWith('```json')) {
-      responseText = responseText.substring(7);
-    }
-    if (responseText.startsWith('```')) {
-      responseText = responseText.substring(3);
-    }
-    if (responseText.endsWith('```')) {
-      responseText = responseText.slice(0, -3);
-    }
-    responseText = responseText.trim();
+    let text = response.text.trim();
+    if (text.startsWith('```json')) text = text.substring(7);
+    if (text.startsWith('```')) text = text.substring(3);
+    if (text.endsWith('```')) text = text.slice(0, -3);
 
-    return JSON.parse(responseText);
+    return JSON.parse(text.trim());
   } catch (error) {
     console.error("Failed to generate name for cluster:", error);
     return {

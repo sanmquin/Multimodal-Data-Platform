@@ -1,33 +1,11 @@
-import mongoose from 'mongoose';
 import { RecordMetadata, Index } from '@pinecone-database/pinecone';
 import { RefineClustersOptions } from './types';
 import { connectMongoose } from './mongo';
+import { getMongooseModels } from './models';
 import { geminiGenerateJson } from './gemini';
 import { mean } from 'simple-statistics';
 import { euclideanDistance } from './utils';
-
-function getMongooseModels(mongoCollection: string) {
-  const clusterSchema = new mongoose.Schema({
-    name: String,
-    description: String,
-    summary: String,
-    centroid: [Number],
-    version: { type: Number, default: 1 },
-    createdAt: { type: Date, default: Date.now }
-  });
-
-  const itemSchema = new mongoose.Schema({
-    textId: String,
-    clusterId: mongoose.Schema.Types.ObjectId,
-    reducedPoints: [Number],
-    createdAt: { type: Date, default: Date.now }
-  });
-
-  const ClusterModel = mongoose.models[`${mongoCollection}_clusters`] || mongoose.model(`${mongoCollection}_clusters`, clusterSchema, `${mongoCollection}_clusters`);
-  const ItemModel = mongoose.models[`${mongoCollection}_items`] || mongoose.model(`${mongoCollection}_items`, itemSchema, `${mongoCollection}_items`);
-
-  return { ClusterModel, ItemModel };
-}
+import { getPrompt } from './prompts';
 
 async function getRepresentativeTexts<T extends RecordMetadata>(
   items: { textId: string, reducedPoints?: number[] }[],
@@ -91,7 +69,7 @@ async function fetchClusterData<T extends RecordMetadata>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mappedItems = items.map((item: any) => ({
       textId: item.textId,
-      reducedPoints: item.reducedPoints
+      reducedPoints: item.reducedDimensions
     }));
     const representativeTexts = await getRepresentativeTexts(mappedItems, index, namespace, cluster.centroid);
 
@@ -108,16 +86,8 @@ async function fetchClusterData<T extends RecordMetadata>(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function generateRefinedClusters(clustersData: any[]) {
-  const prompt = `
-You are an expert taxonomist. Review the following clusters and their representative texts.
-Please refine them into a Mutually Exclusive, Collectively Exhaustive (MECE) set of clusters.
-You may merge similar clusters or split broad clusters.
-Additionally, you MUST include one cluster named "Miscellaneous/Unknown" to catch outliers.
-For each cluster, provide a "name", "description", and a short "summary".
-
-Input clusters:
-${JSON.stringify(clustersData, null, 2)}
-`;
+  let prompt = getPrompt('refineClusters') || '';
+  prompt = prompt.replace('{{clustersData}}', JSON.stringify(clustersData, null, 2));
 
   const schema = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -16,16 +16,16 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
     { "id": "1", "text": "Testing the cloud background cluster." },
     { "id": "2", "text": "Another text to be clustered seamlessly." }
   ],
-  "numClusters": 2,
-  "batchSize": 50,
+  "numClusters": {{NUM_CLUSTERS}},
+  "batchSize": {{BATCH_SIZE}},
   "indexName": "{{PINECONE_INDEX}}",
-  "namespace": "your-namespace",
-  "skipEmbed": false,
+  "namespace": "{{NAMESPACE}}",
+  "skipEmbed": {{SKIP_EMBED}},
   "mongoDb": "{{MONGO_DB}}",
-  "mongoCollection": "my_collection_prefix",
-  "cumulative": false,
-  "context": "General overarching context for the clustering task.",
-  "storeReducedDimensions": true
+  "mongoCollection": "{{MONGO_COLLECTION}}",
+  "cumulative": {{CUMULATIVE}},
+  "context": "{{CONTEXT}}",
+  "storeReducedDimensions": {{STORE_REDUCED_DIMENSIONS}}
 }
 ```
 
@@ -53,12 +53,17 @@ Data is stored in three separate collections based on the `mongoCollection` pref
     *   `name` (String): The generated name of the cluster.
     *   `description` (String): A detailed description of the cluster's theme.
     *   `summary` (String): A concise summary of the cluster.
+    *   `version` (Number): The version of the cluster. Defaults to 1.
+    *   `centroid` (Array of Numbers): Optional. The PCA-reduced point coordinates of the cluster center if `storeReducedDimensions` was used.
     *   `createdAt` (Date): The time the cluster was created.
 
 3.  **`[prefix]_items`**: Stores the mapping between your original text records and their assigned clusters.
     *   `textId` (String): The `id` of the text record you provided.
     *   `clusterId` (ObjectId): The MongoDB `_id` of the associated cluster document in the `[prefix]_clusters` collection.
+    *   `reducedDimensions` (Array of Numbers): Optional. The PCA-reduced point coordinates if `storeReducedDimensions` was used.
     *   `createdAt` (Date): The time the item assignment was created.
+
+When querying the collections directly, you should sort the clusters by `version` descending (`sort({ version: -1 })`) to get the latest cluster taxonomies, especially if you have run subsequent refinement operations.
 
 ### Agent Prompt
 
@@ -81,16 +86,16 @@ Please write code to integrate the multimodal data platform cluster background A
   "texts": [
     { "id": "string", "text": "string" }
   ],
-  "numClusters": "number",
-  "batchSize": "number",
+  "numClusters": {{NUM_CLUSTERS}},
+  "batchSize": {{BATCH_SIZE}},
   "indexName": "{{PINECONE_INDEX}}",
-  "namespace": "string",
-  "skipEmbed": "boolean",
+  "namespace": "{{NAMESPACE}}",
+  "skipEmbed": {{SKIP_EMBED}},
   "mongoDb": "{{MONGO_DB}}",
-  "mongoCollection": "string",
-  "cumulative": "boolean",
-  "context": "string",
-  "storeReducedDimensions": "boolean"
+  "mongoCollection": "{{MONGO_COLLECTION}}",
+  "cumulative": {{CUMULATIVE}},
+  "context": "{{CONTEXT}}",
+  "storeReducedDimensions": {{STORE_REDUCED_DIMENSIONS}}
 }
 ```
 

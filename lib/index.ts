@@ -1,4 +1,5 @@
 export * from './types';
+export * from './models';
 export * from './utils';
 export * from './embed';
 export * from './cluster';
@@ -7,3 +8,8 @@ export * from './gemma';
 export * from './gemini';
 export * from './embedAndCluster';
 export * from './refineClusters';
+export * from './prompts';
+export * from './describeFeatures';
+export * from './evaluateFeatures';
+export * from './pipelines';
+export * from './embedAndReduce';

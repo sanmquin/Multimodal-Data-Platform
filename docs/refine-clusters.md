@@ -13,9 +13,9 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
 ```json
 {
   "mongoDb": "{{MONGO_DB}}",
-  "mongoCollection": "my_collection_prefix",
+  "mongoCollection": "{{MONGO_COLLECTION}}",
   "indexName": "{{PINECONE_INDEX}}",
-  "namespace": "your-namespace"
+  "namespace": "{{NAMESPACE}}"
 }
 ```
 
@@ -27,6 +27,20 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
 ### Environment Setup
 
 The function depends on the `PINECONE_API_KEY` environment variable to authorize against Pinecone. It also requires the `GEMINI_API_KEY` to be set in your deployment environment in order to invoke the generative model.
+
+### Querying Refined Clusters
+
+The refine clusters API generates new clusters and increments their `version`. The new cluster documents will be persisted into the `[prefix]_clusters` MongoDB collection.
+
+The clusters collection schema:
+*   `name` (String): The generated name of the cluster.
+*   `description` (String): A detailed description of the cluster's theme.
+*   `summary` (String): A concise summary of the cluster.
+*   `version` (Number): The version of the cluster. Defaults to 1 and increments per refinement.
+*   `centroid` (Array of Numbers): Optional. The PCA-reduced point coordinates of the cluster center.
+*   `createdAt` (Date): The time the cluster was created.
+
+When querying the collections directly, you should sort the clusters by `version` descending (`sort({ version: -1 })`) to get the latest cluster taxonomies, as this reflects the newest output from the refine clusters operation. Item documents in `[prefix]_items` retain their original relationships and may contain `reducedDimensions` coordinates that can be plotted with the `centroid` for visualizations.
 
 ### Agent Prompt
 
@@ -47,9 +61,9 @@ Please write code to integrate the multimodal data platform refine clusters back
 ```json
 {
   "mongoDb": "{{MONGO_DB}}",
-  "mongoCollection": "string",
+  "mongoCollection": "{{MONGO_COLLECTION}}",
   "indexName": "{{PINECONE_INDEX}}",
-  "namespace": "string"
+  "namespace": "{{NAMESPACE}}"
 }
 ```
 
