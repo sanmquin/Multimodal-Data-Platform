@@ -70,6 +70,10 @@ export interface RefineClustersOptions<T extends RecordMetadata = RecordMetadata
 export interface Feature {
   name: string;
   description: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  modelJson?: any;
+  error?: number;
+  averageValue?: number;
 }
 
 export interface FeatureEvaluation {

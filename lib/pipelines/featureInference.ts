@@ -23,9 +23,12 @@ export async function featureInference(options: FeatureInferenceOptions): Promis
   if (!texts || texts.length === 0 || !(await connectMongoose(mongoDb))) return [];
 
   const { FeatureModel, EvaluationModel, PCAModel } = getFeatureModels(mongoCollection);
-  const featureDoc = await FeatureModel.findOne({ categoryId }).lean();
+  const featureDocs = await FeatureModel.find({ categoryId }).lean();
 
-  if (!featureDoc || !featureDoc.features || featureDoc.features.length === 0 || !featureDoc.modelBuffer) return [];
+  if (!featureDocs || featureDocs.length === 0) return [];
+
+  const validFeatures = featureDocs.filter((doc) => doc.modelBuffer && doc.name);
+  if (validFeatures.length === 0) return [];
 
   const { points } = await embedAndReduce({ texts, embedder, pc, model, reduceDimensions: false });
   if (!points || points.length === 0) return [];
@@ -39,28 +42,35 @@ export async function featureInference(options: FeatureInferenceOptions): Promis
     }
   }
 
-  const mlr = MLR.load(JSON.parse(featureDoc.modelBuffer.toString('utf-8')));
-  const predictions = mlr.predict(inferenceInputs);
+  const allPredictions: Record<string, number[]> = {};
 
-  return saveInferences(texts, predictions, featureDoc.features, categoryId, EvaluationModel);
+  for (const feature of validFeatures) {
+    if (!feature.modelBuffer || !feature.name) continue;
+    const mlr = MLR.load(JSON.parse(feature.modelBuffer.toString('utf-8')));
+    const predictions = mlr.predict(inferenceInputs);
+    // MLR returns a 2D array, we extract the first column
+    allPredictions[feature.name] = predictions.map((p) => p[0]);
+  }
+
+  return saveInferences(texts, allPredictions, validFeatures, categoryId, EvaluationModel);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function saveInferences(texts: TextRecord[], predictions: number[][], features: any[], categoryId: string, EvaluationModel: any): Promise<TextFeatureEvaluation[]> {
+async function saveInferences(texts: TextRecord[], allPredictions: Record<string, number[]>, features: any[], categoryId: string, EvaluationModel: any): Promise<TextFeatureEvaluation[]> {
   const updatedEvaluations: TextFeatureEvaluation[] = [];
 
   for (let i = 0; i < texts.length; i++) {
     const textRecord = texts[i];
-    const predictionRow = predictions[i];
 
     let evaluationDoc = await EvaluationModel.findOne({ categoryId, textId: textRecord.id });
     if (!evaluationDoc) {
       evaluationDoc = new EvaluationModel({ categoryId, textId: textRecord.id, text: textRecord.text, evaluations: [] });
     }
 
-    for (let j = 0; j < features.length; j++) {
-      const featureName = features[j].name;
-      const inferenceValue = predictionRow[j];
+    for (const feature of features) {
+      if (!feature.name || !allPredictions[feature.name]) continue;
+      const featureName = feature.name;
+      const inferenceValue = allPredictions[feature.name][i];
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const existingEvalIndex = evaluationDoc.evaluations.findIndex((ev: any) => ev.featureName === featureName);
