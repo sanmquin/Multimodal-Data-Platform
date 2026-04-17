@@ -45,7 +45,7 @@ Data is stored in three separate collections based on the `mongoCollection` pref
 
 1.  **`[prefix]_pca`**: Stores the PCA model used for dimensionality reduction.
     *   `categoryId` (String): The identifier linking the model to the batch of texts.
-    *   `model` (Object): The serialized PCA model.
+    *   `modelBuffer` (Buffer): The serialized PCA model.
     *   `createdAt` (Date): The time the model was saved.
 
 2.  **`[prefix]_features`**: Stores the descriptive features generated from the text snippets, as well as the trained multivariate linear regression model.

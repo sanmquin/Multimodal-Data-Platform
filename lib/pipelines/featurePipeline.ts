@@ -104,7 +104,7 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, ca
     }
 
     if (pcaModelJson) {
-      await PCAModel.create({ categoryId, model: pcaModelJson });
+      await PCAModel.create({ categoryId, modelBuffer: Buffer.from(JSON.stringify(pcaModelJson), 'utf-8') });
     }
 
   } catch (err) {

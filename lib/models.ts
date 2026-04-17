@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 export function getMongooseModels(mongoCollection: string) {
   const pcaSchema = new mongoose.Schema({
-    model: mongoose.Schema.Types.Mixed,
+    modelBuffer: Buffer,
     createdAt: { type: Date, default: Date.now }
   });
 
@@ -32,7 +32,7 @@ export function getMongooseModels(mongoCollection: string) {
 export function getFeatureModels(mongoCollection: string) {
   const pcaSchema = new mongoose.Schema({
     categoryId: String,
-    model: mongoose.Schema.Types.Mixed,
+    modelBuffer: Buffer,
     createdAt: { type: Date, default: Date.now }
   });
 
