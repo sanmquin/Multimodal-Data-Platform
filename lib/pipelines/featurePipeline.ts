@@ -87,6 +87,7 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, fe
 
     if (features && features.length > 0) {
       const mappedFeatures = features.map(f => ({
+        categoryId,
         name: f.name,
         description: f.description,
         modelBuffer: f.modelJson ? Buffer.from(JSON.stringify(f.modelJson), 'utf-8') : undefined,
@@ -94,10 +95,7 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, fe
         averageValue: f.averageValue
       }));
 
-      await FeatureModel.create({
-        categoryId,
-        features: mappedFeatures
-      });
+      await FeatureModel.insertMany(mappedFeatures);
     }
 
     if (evaluations && evaluations.length > 0) {

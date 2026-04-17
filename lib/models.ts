@@ -38,13 +38,11 @@ export function getFeatureModels(mongoCollection: string) {
 
   const featureSchema = new mongoose.Schema({
     categoryId: String,
-    features: [{
-      name: String,
-      description: String,
-      modelBuffer: Buffer,
-      error: Number,
-      averageValue: Number
-    }],
+    name: String,
+    description: String,
+    modelBuffer: Buffer,
+    error: Number,
+    averageValue: Number,
     createdAt: { type: Date, default: Date.now }
   });
 
