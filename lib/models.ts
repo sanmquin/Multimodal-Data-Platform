@@ -54,7 +54,8 @@ export function getFeatureModels(mongoCollection: string) {
     text: String,
     evaluations: [{
       featureName: String,
-      score: Number
+      score: Number,
+      inferenceValue: Number
     }],
     createdAt: { type: Date, default: Date.now }
   });

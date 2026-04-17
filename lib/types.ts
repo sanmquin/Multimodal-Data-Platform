@@ -74,7 +74,8 @@ export interface Feature {
 
 export interface FeatureEvaluation {
   featureName: string;
-  score: number;
+  score?: number;
+  inferenceValue?: number;
 }
 
 export interface TextFeatureEvaluation {
