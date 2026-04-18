@@ -48,13 +48,7 @@ export const handler: Handler = async (event) => {
         headers: corsHeaders,
         body: JSON.stringify({ error: 'categoryId is required' })
       };
-    } else {
-      return {
-        statusCode: 202,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: 'categoryId was defined' })
-      };
-		}
+    }
 
     console.log(`[features function] Validation passed. Delegating ${texts.length} texts to background function...`);
 
