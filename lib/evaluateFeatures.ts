@@ -26,7 +26,8 @@ export async function evaluateFeatures(
 
     try {
       const response = await gemmaGenerate(prompt, {
-        systemInstruction: "You are an expert feature evaluation AI. Always output raw, valid JSON. Only return a JSON array."
+        systemInstruction: "You are an expert feature evaluation AI. Always output raw, valid JSON. Only return a JSON array.",
+        promptCategory: 'evaluateFeatures'
       });
 
       let text = response.text.trim();
@@ -35,6 +36,7 @@ export async function evaluateFeatures(
       if (text.endsWith('```')) text = text.slice(0, -3);
 
       const evaluations = JSON.parse(text.trim()) as TextFeatureEvaluation[];
+      console.log(`[evaluateFeatures] Batch evaluations result:`, JSON.stringify(evaluations, null, 2));
       allEvaluations = allEvaluations.concat(evaluations);
     } catch (error) {
       console.error(`Failed to evaluate features for batch starting at ${i}:`, error);

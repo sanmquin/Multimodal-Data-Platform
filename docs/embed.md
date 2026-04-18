@@ -17,7 +17,11 @@ You can make an HTTP POST request to:
   ],
   "batchSize": {{BATCH_SIZE}},
   "indexName": "{{PINECONE_INDEX}}",
-  "namespace": "{{NAMESPACE}}"
+  "namespace": "{{NAMESPACE}}",
+  "reduceDimensions": {{REDUCE_DIMENSIONS}},
+  "pcaDimensions": {{PCA_DIMENSIONS}},
+  "mongoDb": "{{MONGO_DB}}",
+  "mongoCollection": "{{MONGO_COLLECTION}}"
 }
 ```
 
@@ -50,7 +54,11 @@ If you are an LLM agent or automated tooling trying to reason about how to call 
   ],
   "batchSize": {{BATCH_SIZE}},
   "indexName": "{{PINECONE_INDEX}}",
-  "namespace": "{{NAMESPACE}}"
+  "namespace": "{{NAMESPACE}}",
+  "reduceDimensions": {{REDUCE_DIMENSIONS}},
+  "pcaDimensions": {{PCA_DIMENSIONS}},
+  "mongoDb": "{{MONGO_DB}}",
+  "mongoCollection": "{{MONGO_COLLECTION}}"
 }
 ```
 
@@ -62,6 +70,10 @@ If you are an LLM agent or automated tooling trying to reason about how to call 
 *   `indexName` (*Optional*): Target Pinecone index name. Defaults to a playground index if omitted.
 *   `namespace` (*Optional*): Target Pinecone namespace.
 *   `batchSize` (*Optional*): Size per chunk for processing. Defaults to 50.
+*   `reduceDimensions` (*Optional*): Set to `true` to apply PCA dimensionality reduction to the generated embeddings.
+*   `pcaDimensions` (*Optional*): The number of dimensions to retain if `reduceDimensions` is true. Defaults to 20.
+*   `mongoDb` (*Optional*): The MongoDB database name to store the embeddings and PCA models in.
+*   `mongoCollection` (*Optional*): The MongoDB collection prefix. If both MongoDB parameters are provided, documents are stored in the `[prefix]_embeddings` and `[prefix]_pca` collections.
 
 #### Response Payload Structure
 

@@ -19,6 +19,8 @@ export interface FeaturePipelineOptions {
   categoryId: string;
   indexName?: string;
   namespace?: string;
+  cloud?: string;
+  region?: string;
 }
 
 export interface FeaturePipelineResult {
@@ -40,7 +42,7 @@ export interface FeaturePipelineResult {
 export async function featurePipeline(
   options: FeaturePipelineOptions
 ): Promise<FeaturePipelineResult> {
-  const { texts, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20, mongoDb, mongoCollection, categoryId, indexName, namespace } = options;
+  const { texts, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20, mongoDb, mongoCollection, categoryId, indexName, namespace, cloud, region } = options;
 
   if (!texts || texts.length === 0) return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
 
@@ -62,7 +64,10 @@ export async function featurePipeline(
   const { points, reducedPoints, pcaModelJson } = await embedAndReduce({
     texts, embedder, pc, model, reduceDimensions, pcaDimensions,
     index: pc && indexName ? pc.index(indexName) : undefined,
-    namespace
+    indexName,
+    namespace,
+    cloud,
+    region
   });
 
   console.log(`[FeaturePipeline] Training linear regression models for features...`);
