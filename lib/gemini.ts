@@ -37,7 +37,7 @@ export async function geminiGenerateJson(
 ): Promise<any> {
   const {
     apiKey = process.env.GEMINI_API_KEY,
-    model = 'gemini-3.0-flash',
+    model = 'gemini-3-flash-preview',
     systemInstruction,
     promptCategory = 'default',
   } = options;
