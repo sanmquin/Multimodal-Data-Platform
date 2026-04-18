@@ -21,7 +21,9 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
   "pcaDimensions": {{PCA_DIMENSIONS}},
   "mongoDb": "{{MONGO_DB}}",
   "mongoCollection": "{{MONGO_COLLECTION}}",
-  "categoryId": "{{CATEGORY_ID}}"
+  "categoryId": "{{CATEGORY_ID}}",
+  "indexName": "{{TARGET_INDEX}}",
+  "namespace": "{{NAMESPACE}}"
 }
 ```
 
@@ -29,6 +31,8 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
 - **model**: The embedding model to use (e.g., `"multilingual-e5-large"`). Defaults to `"multilingual-e5-large"`.
 - **reduceDimensions**: Set to `true` to reduce the dimensionality of the generated embeddings using PCA. Defaults to `true`.
 - **pcaDimensions**: The target number of dimensions for PCA reduction. Defaults to 20.
+- **indexName**: Optional Pinecone target index to lookup or store embeddings.
+- **namespace**: Optional Pinecone target namespace to lookup or store embeddings.
 - **mongoDb**: The name of the MongoDB database where features, evaluations, PCA models, and linear regression models should be saved.
 - **mongoCollection**: The prefix for the MongoDB collections to save into.
 - **categoryId**: Optional identifier used to associate the generated features, evaluations, and models with a specific batch or category of texts.
@@ -93,7 +97,9 @@ Please write code to integrate the multimodal data platform features background 
   "pcaDimensions": {{PCA_DIMENSIONS}},
   "mongoDb": "{{MONGO_DB}}",
   "mongoCollection": "{{MONGO_COLLECTION}}",
-  "categoryId": "{{CATEGORY_ID}}"
+  "categoryId": "{{CATEGORY_ID}}",
+  "indexName": "{{TARGET_INDEX}}",
+  "namespace": "{{NAMESPACE}}"
 }
 ```
 
@@ -107,6 +113,8 @@ Please write code to integrate the multimodal data platform features background 
 *   `mongoDb` (*Optional*): The name of the MongoDB database where the output data should be saved.
 *   `mongoCollection` (*Optional*): The prefix for the MongoDB collections to save into (e.g. `[prefix]_pca`, `[prefix]_features`, `[prefix]_evaluations`). Required if `mongoDb` is specified.
 *   `categoryId` (*Optional*): Identifier to associate generated features, evaluations, and models with a specific text batch.
+*   `indexName` (*Optional*): Target Pinecone index name to lookup existing embeddings or persist newly generated ones.
+*   `namespace` (*Optional*): Target Pinecone namespace to lookup existing embeddings or persist newly generated ones.
 
 #### Response
 

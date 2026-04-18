@@ -17,6 +17,8 @@ export interface FeaturePipelineOptions {
   mongoDb?: string;
   mongoCollection?: string;
   categoryId: string;
+  indexName?: string;
+  namespace?: string;
 }
 
 export interface FeaturePipelineResult {
@@ -38,15 +40,11 @@ export interface FeaturePipelineResult {
 export async function featurePipeline(
   options: FeaturePipelineOptions
 ): Promise<FeaturePipelineResult> {
-  const { texts, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20, mongoDb, mongoCollection, categoryId } = options;
+  const { texts, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20, mongoDb, mongoCollection, categoryId, indexName, namespace } = options;
 
-  if (!texts || texts.length === 0) {
-    return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
-  }
+  if (!texts || texts.length === 0) return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
 
   const rawTexts = texts.map((t) => t.text);
-
-  // 1. Describe the texts to find the features
   console.log(`[FeaturePipeline] Describing features for category ${categoryId} and ${rawTexts.length} texts...`);
   const features = await describeFeatures(rawTexts);
 
@@ -56,28 +54,21 @@ export async function featurePipeline(
   }
   console.log(`[FeaturePipeline] Generated ${features.length} features.`);
 
-  // 2. Evaluate the texts to get numerical quantification of features
   console.log(`[FeaturePipeline] Evaluating features for all texts...`);
   const evaluations = await evaluateFeatures(rawTexts, features);
   console.log(`[FeaturePipeline] Feature evaluation complete.`);
 
-  // 3. Generate embeddings and reduce dimensions using the common utility
   console.log(`[FeaturePipeline] Generating embeddings and optionally reducing dimensions...`);
   const { points, reducedPoints, pcaModelJson } = await embedAndReduce({
-    texts,
-    embedder,
-    pc,
-    model,
-    reduceDimensions,
-    pcaDimensions
+    texts, embedder, pc, model, reduceDimensions, pcaDimensions,
+    index: pc && indexName ? pc.index(indexName) : undefined,
+    namespace
   });
 
-  // 4. Train a linear regression to predict features from embeddings
   console.log(`[FeaturePipeline] Training linear regression models for features...`);
   const X = reduceDimensions && reducedPoints && reducedPoints.length > 0 ? reducedPoints : points;
   trainAndEvaluateRegression(X, evaluations, features);
 
-  // 5. Store to MongoDB if configured
   if (mongoDb && mongoCollection) {
     console.log(`[FeaturePipeline] Storing pipeline results to MongoDB collection: ${mongoCollection}`);
     await storeFeaturesToMongo(mongoDb, mongoCollection, features, evaluations, pcaModelJson, categoryId, texts);
