@@ -108,7 +108,7 @@ async function generateRefinedClusters(clustersData: any[]) {
   };
 
   const response = await geminiGenerateJson(prompt, schema, {
-    model: 'gemini-3.0-flash',
+    model: 'gemini-3-flash-preview',
     systemInstruction: "You are an expert at categorizing data.",
     promptCategory: 'refineClusters'
   });
