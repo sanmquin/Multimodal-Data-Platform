@@ -29,6 +29,26 @@ export function getMongooseModels(mongoCollection: string) {
   return { PCAModel, ClusterModel, ItemModel };
 }
 
+export function getEmbeddingModels(mongoCollection: string) {
+  const pcaSchema = new mongoose.Schema({
+    modelBuffer: Buffer,
+    createdAt: { type: Date, default: Date.now }
+  });
+
+  const embeddingSchema = new mongoose.Schema({
+    textId: String,
+    text: String,
+    values: [Number],
+    reducedDimensions: [Number],
+    createdAt: { type: Date, default: Date.now }
+  });
+
+  const PCAModel = mongoose.models[`${mongoCollection}_pca`] || mongoose.model(`${mongoCollection}_pca`, pcaSchema, `${mongoCollection}_pca`);
+  const EmbeddingModel = mongoose.models[`${mongoCollection}_embeddings`] || mongoose.model(`${mongoCollection}_embeddings`, embeddingSchema, `${mongoCollection}_embeddings`);
+
+  return { PCAModel, EmbeddingModel };
+}
+
 export function getFeatureModels(mongoCollection: string) {
   const pcaSchema = new mongoose.Schema({
     categoryId: { type: String, required: true },

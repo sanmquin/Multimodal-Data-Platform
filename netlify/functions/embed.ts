@@ -32,7 +32,7 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[embed function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts, batchSize = 50, namespace, cloud, region } = parsedBody;
+    const { texts, batchSize = 50, namespace, cloud, region, reduceDimensions, pcaDimensions, mongoDb, mongoCollection } = parsedBody;
     const indexName = (parsedBody.indexName || 'default-index').toLowerCase();
 
     if (!texts || !Array.isArray(texts)) {
@@ -77,14 +77,54 @@ export const handler: Handler = async (event) => {
       region
     };
 
-    console.log(`[embed function] Calling embed() logic...`);
-    const stats = await embed(options);
-    console.log(`[embed function] Embed completed successfully. Stats: ${JSON.stringify(stats)}`);
+    let statsObj;
+
+    if (reduceDimensions || (mongoDb && mongoCollection)) {
+      console.log(`[embed function] Calling embedAndReduce logic...`);
+      const { embedAndReduce } = await import('../../lib/index');
+      const { points, reducedPoints, pcaModelJson, stats } = await embedAndReduce({
+        ...options,
+        reduceDimensions: reduceDimensions ?? false,
+        pcaDimensions,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        index: index as any,
+        namespace: namespace || ''
+      });
+
+      statsObj = stats || {};
+
+      if (mongoDb && mongoCollection) {
+        console.log(`[embed function] Storing embeddings to MongoDB...`);
+        const { connectMongoose } = await import('../../lib/mongo');
+        const { getEmbeddingModels } = await import('../../lib/models');
+        if (await connectMongoose(mongoDb)) {
+          const { EmbeddingModel, PCAModel } = getEmbeddingModels(mongoCollection);
+
+          if (pcaModelJson) {
+            // pcaModelJson is already JSON from applyPCAIfRequested
+            await PCAModel.create({ modelBuffer: Buffer.from(JSON.stringify(pcaModelJson), 'utf-8') });
+          }
+
+          const docs = texts.map((t: any, i: number) => ({
+            textId: t.id,
+            text: t.text,
+            values: points[i],
+            reducedDimensions: reducedPoints[i] || []
+          }));
+          await EmbeddingModel.insertMany(docs);
+        }
+      }
+    } else {
+      console.log(`[embed function] Calling embed() logic...`);
+      statsObj = await embed(options);
+    }
+
+    console.log(`[embed function] Embed completed successfully. Stats: ${JSON.stringify(statsObj)}`);
 
     return {
       statusCode: 200,
       headers: corsHeaders,
-      body: JSON.stringify(stats)
+      body: JSON.stringify(statsObj)
     };
   } catch (error: unknown) {
     const err = error as Error;
