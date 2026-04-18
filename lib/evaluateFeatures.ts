@@ -22,6 +22,8 @@ export async function evaluateFeatures(
     let prompt = basePrompt.replace('{{features}}', JSON.stringify(features, null, 2));
     prompt = prompt.replace('{{texts}}', JSON.stringify(batchTexts, null, 2));
 
+    console.log(`[evaluateFeatures] Processing batch ${Math.floor(i / batchSize) + 1} of ${Math.ceil(texts.length / batchSize)}...`);
+
     try {
       const response = await gemmaGenerate(prompt, {
         systemInstruction: "You are an expert feature evaluation AI. Always output raw, valid JSON. Only return a JSON array."

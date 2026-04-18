@@ -16,7 +16,7 @@ export interface FeaturePipelineOptions {
   pcaDimensions?: number;
   mongoDb?: string;
   mongoCollection?: string;
-  categoryId?: string;
+  categoryId: string;
 }
 
 export interface FeaturePipelineResult {
@@ -47,16 +47,22 @@ export async function featurePipeline(
   const rawTexts = texts.map((t) => t.text);
 
   // 1. Describe the texts to find the features
+  console.log(`[FeaturePipeline] Describing features for category ${categoryId} and ${rawTexts.length} texts...`);
   const features = await describeFeatures(rawTexts);
 
   if (!features || features.length === 0) {
+    console.log(`[FeaturePipeline] No features were generated. Returning early.`);
     return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
   }
+  console.log(`[FeaturePipeline] Generated ${features.length} features.`);
 
   // 2. Evaluate the texts to get numerical quantification of features
+  console.log(`[FeaturePipeline] Evaluating features for all texts...`);
   const evaluations = await evaluateFeatures(rawTexts, features);
+  console.log(`[FeaturePipeline] Feature evaluation complete.`);
 
   // 3. Generate embeddings and reduce dimensions using the common utility
+  console.log(`[FeaturePipeline] Generating embeddings and optionally reducing dimensions...`);
   const { points, reducedPoints, pcaModelJson } = await embedAndReduce({
     texts,
     embedder,
@@ -67,19 +73,23 @@ export async function featurePipeline(
   });
 
   // 4. Train a linear regression to predict features from embeddings
+  console.log(`[FeaturePipeline] Training linear regression models for features...`);
   const X = reduceDimensions && reducedPoints && reducedPoints.length > 0 ? reducedPoints : points;
   trainAndEvaluateRegression(X, evaluations, features);
 
   // 5. Store to MongoDB if configured
   if (mongoDb && mongoCollection) {
+    console.log(`[FeaturePipeline] Storing pipeline results to MongoDB collection: ${mongoCollection}`);
     await storeFeaturesToMongo(mongoDb, mongoCollection, features, evaluations, pcaModelJson, categoryId, texts);
+    console.log(`[FeaturePipeline] Storage to MongoDB complete.`);
   }
 
+  console.log(`[FeaturePipeline] Pipeline completed successfully.`);
   return { features, evaluations, points, reducedPoints, pcaModelJson };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, features: Feature[], evaluations: TextFeatureEvaluation[], pcaModelJson: any, categoryId?: string, texts?: TextRecord[]) {
+async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, features: Feature[], evaluations: TextFeatureEvaluation[], pcaModelJson: any, categoryId: string, texts?: TextRecord[]) {
   try {
     if (!(await connectMongoose(mongoDb))) return;
 
