@@ -1,9 +1,12 @@
 import { GoogleGenAI, Schema } from "@google/genai";
+import { connectMongoose } from "./mongo";
+import { getPromptModels } from "./models";
 
 export interface GeminiOptions {
   apiKey?: string;
   model?: string;
   systemInstruction?: string;
+  promptCategory?: string;
 }
 
 /**
@@ -14,6 +17,18 @@ export interface GeminiOptions {
  * @param options - Configuration options for the API call.
  * @returns A promise that resolves to the parsed JSON response.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function logPrompt(category: string, model: string, prompt: string, result: any, elapsedTime: number) {
+  try {
+    if (await connectMongoose('mmdo')) {
+      const { PromptModel } = getPromptModels('default');
+      await PromptModel.create({ category, model, prompt, result, elapsedTime });
+    }
+  } catch (err) {
+    console.error('Failed to log gemini prompt to Mongo:', err);
+  }
+}
+
 export async function geminiGenerateJson(
   prompt: string,
   responseSchema: Schema,
@@ -24,6 +39,7 @@ export async function geminiGenerateJson(
     apiKey = process.env.GEMINI_API_KEY,
     model = 'gemini-3.0-flash',
     systemInstruction,
+    promptCategory = 'default',
   } = options;
 
   if (!apiKey) {
@@ -32,6 +48,7 @@ export async function geminiGenerateJson(
 
   const ai = new GoogleGenAI({ apiKey });
 
+  const startTime = Date.now();
   const response = await ai.models.generateContent({
     model,
     contents: prompt,
@@ -41,7 +58,19 @@ export async function geminiGenerateJson(
       responseSchema: responseSchema,
     }
   });
+  const elapsedTime = Date.now() - startTime;
 
   const responseText = response.text || '';
-  return JSON.parse(responseText);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let parsedResult: any = responseText;
+  try {
+    parsedResult = JSON.parse(responseText);
+  } catch {
+    // Ignore, keep as string
+  }
+
+  logPrompt(promptCategory, model, prompt, parsedResult, elapsedTime);
+
+  return parsedResult;
 }
