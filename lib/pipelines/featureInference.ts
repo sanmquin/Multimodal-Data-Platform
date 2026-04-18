@@ -15,10 +15,12 @@ export interface FeatureInferenceOptions {
   pc?: Pinecone;
   model?: string;
   reduceDimensions?: boolean;
+  indexName?: string;
+  namespace?: string;
 }
 
 export async function featureInference(options: FeatureInferenceOptions): Promise<TextFeatureEvaluation[]> {
-  const { mongoDb, mongoCollection, categoryId, texts, embedder, pc, model, reduceDimensions = true } = options;
+  const { mongoDb, mongoCollection, categoryId, texts, embedder, pc, model, reduceDimensions = true, indexName, namespace } = options;
 
   if (!texts || texts.length === 0 || !(await connectMongoose(mongoDb))) return [];
 
@@ -30,7 +32,15 @@ export async function featureInference(options: FeatureInferenceOptions): Promis
   const validFeatures = featureDocs.filter((doc) => doc.modelBuffer && doc.name);
   if (validFeatures.length === 0) return [];
 
-  const { points } = await embedAndReduce({ texts, embedder, pc, model, reduceDimensions: false });
+  const { points } = await embedAndReduce({
+    texts,
+    embedder,
+    pc,
+    model,
+    reduceDimensions: false,
+    index: pc && indexName ? pc.index(indexName) : undefined,
+    namespace
+  });
   if (!points || points.length === 0) return [];
 
   let inferenceInputs = points;

@@ -2,6 +2,8 @@ import { Pinecone } from '@pinecone-database/pinecone';
 import { sampleCorrelation } from 'simple-statistics';
 import { TextRecord, TextFeatureEvaluation } from '../types';
 import { featureInference } from './featureInference';
+import { connectMongoose } from '../mongo';
+import { getFeatureModels } from '../models';
 
 export interface PerformanceTextRecord extends TextRecord {
   output: number;
@@ -17,6 +19,8 @@ export interface ExplainPerformanceOptions {
   pc?: Pinecone;
   model?: string;
   reduceDimensions?: boolean;
+  indexName?: string;
+  namespace?: string;
 }
 
 export interface ExplainPerformanceResult {
@@ -25,7 +29,7 @@ export interface ExplainPerformanceResult {
 }
 
 export async function explainPerformance(options: ExplainPerformanceOptions): Promise<ExplainPerformanceResult> {
-  const { mongoDb, mongoCollection, categoryId, featureName, texts, embedder, pc, model, reduceDimensions } = options;
+  const { mongoDb, mongoCollection, categoryId, featureName, texts, embedder, pc, model, reduceDimensions, indexName, namespace } = options;
 
   if (!texts || texts.length === 0) {
     return { correlation: 0, evaluations: [] };
@@ -40,7 +44,9 @@ export async function explainPerformance(options: ExplainPerformanceOptions): Pr
     embedder,
     pc,
     model,
-    reduceDimensions
+    reduceDimensions,
+    indexName,
+    namespace
   });
 
   if (!evaluations || evaluations.length === 0) {
@@ -67,6 +73,11 @@ export async function explainPerformance(options: ExplainPerformanceOptions): Pr
   }
 
   const correlation = sampleCorrelation(featureValues, outputValues);
+
+  if (await connectMongoose(mongoDb)) {
+    const { PerformanceModel } = getFeatureModels(mongoCollection);
+    await PerformanceModel.create({ categoryId, featureName, correlation });
+  }
 
   return { correlation, evaluations };
 }
