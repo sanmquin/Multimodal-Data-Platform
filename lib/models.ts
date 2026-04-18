@@ -58,9 +58,17 @@ export function getFeatureModels(mongoCollection: string) {
     createdAt: { type: Date, default: Date.now }
   });
 
+  const performanceSchema = new mongoose.Schema({
+    categoryId: { type: String, required: true },
+    featureName: String,
+    correlation: Number,
+    createdAt: { type: Date, default: Date.now }
+  });
+
   const PCAModel = mongoose.models[`${mongoCollection}_pca`] || mongoose.model(`${mongoCollection}_pca`, pcaSchema, `${mongoCollection}_pca`);
   const FeatureModel = mongoose.models[`${mongoCollection}_features`] || mongoose.model(`${mongoCollection}_features`, featureSchema, `${mongoCollection}_features`);
   const EvaluationModel = mongoose.models[`${mongoCollection}_evaluations`] || mongoose.model(`${mongoCollection}_evaluations`, evaluationSchema, `${mongoCollection}_evaluations`);
+  const PerformanceModel = mongoose.models[`${mongoCollection}_performance`] || mongoose.model(`${mongoCollection}_performance`, performanceSchema, `${mongoCollection}_performance`);
 
-  return { PCAModel, FeatureModel, EvaluationModel };
+  return { PCAModel, FeatureModel, EvaluationModel, PerformanceModel };
 }
