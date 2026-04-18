@@ -32,15 +32,8 @@ export async function featureInference(options: FeatureInferenceOptions): Promis
   const validFeatures = featureDocs.filter((doc) => doc.modelBuffer && doc.name);
   if (validFeatures.length === 0) return [];
 
-  const { points } = await embedAndReduce({
-    texts,
-    embedder,
-    pc,
-    model,
-    reduceDimensions: false,
-    index: pc && indexName ? pc.index(indexName) : undefined,
-    namespace
-  });
+  const index = pc && indexName ? pc.index(indexName) : undefined;
+  const { points } = await embedAndReduce({ texts, embedder, pc, model, reduceDimensions: false, index, namespace });
   if (!points || points.length === 0) return [];
 
   let inferenceInputs = points;

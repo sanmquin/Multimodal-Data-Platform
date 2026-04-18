@@ -20,7 +20,9 @@ The endpoint is synchronous. It validates the payload and returns the text evalu
   "reduceDimensions": {{REDUCE_DIMENSIONS}},
   "mongoDb": "{{MONGO_DB}}",
   "mongoCollection": "{{MONGO_COLLECTION}}",
-  "categoryId": "{{CATEGORY_ID}}"
+  "categoryId": "{{CATEGORY_ID}}",
+  "indexName": "{{TARGET_INDEX}}",
+  "namespace": "{{NAMESPACE}}"
 }
 ```
 
@@ -30,6 +32,8 @@ The endpoint is synchronous. It validates the payload and returns the text evalu
 - **mongoDb**: The name of the MongoDB database where features, PCA models, and linear regression models are saved.
 - **mongoCollection**: The prefix for the MongoDB collections to read the saved models from.
 - **categoryId**: Identifier used to load the specific features and PCA model associated with a specific batch of texts.
+- **indexName**: Optional Pinecone target index to lookup or store embeddings.
+- **namespace**: Optional Pinecone target namespace to lookup or store embeddings.
 
 ### Environment Setup
 
@@ -60,7 +64,9 @@ Please write code to integrate the multimodal data platform feature inference AP
   "reduceDimensions": {{REDUCE_DIMENSIONS}},
   "mongoDb": "{{MONGO_DB}}",
   "mongoCollection": "{{MONGO_COLLECTION}}",
-  "categoryId": "{{CATEGORY_ID}}"
+  "categoryId": "{{CATEGORY_ID}}",
+  "indexName": "{{TARGET_INDEX}}",
+  "namespace": "{{NAMESPACE}}"
 }
 ```
 
@@ -73,6 +79,8 @@ Please write code to integrate the multimodal data platform feature inference AP
 *   `categoryId` (**Required**): Identifier to load generated features and models.
 *   `model` (*Optional*): The embedding model to use. Defaults to `multilingual-e5-large`.
 *   `reduceDimensions` (*Optional*): Set to `true` to apply PCA dimensionality reduction to embeddings before prediction. Defaults to `true`.
+*   `indexName` (*Optional*): Target Pinecone index name to lookup existing embeddings or persist newly generated ones.
+*   `namespace` (*Optional*): Target Pinecone namespace to lookup existing embeddings or persist newly generated ones.
 
 #### Response
 
