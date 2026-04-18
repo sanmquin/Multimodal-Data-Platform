@@ -47,7 +47,7 @@ export async function featurePipeline(
   const rawTexts = texts.map((t) => t.text);
 
   // 1. Describe the texts to find the features
-  console.log(`[FeaturePipeline] Describing features for ${rawTexts.length} texts...`);
+  console.log(`[FeaturePipeline] Describing features for category ${categoryId} and ${rawTexts.length} texts...`);
   const features = await describeFeatures(rawTexts);
 
   if (!features || features.length === 0) {
