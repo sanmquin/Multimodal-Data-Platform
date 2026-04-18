@@ -10,6 +10,7 @@ export interface EmbedStats {
   writes: number;
   errors: number;
   elapsedMs: number;
+  embeddings?: number[][];
 }
 
 export interface EmbedOptions<T extends RecordMetadata = RecordMetadata> {
@@ -22,6 +23,7 @@ export interface EmbedOptions<T extends RecordMetadata = RecordMetadata> {
   indexName?: string;
   cloud?: string;
   region?: string;
+  returnEmbeddings?: boolean;
 }
 
 export interface ClusterResult<T extends RecordMetadata = RecordMetadata> {
