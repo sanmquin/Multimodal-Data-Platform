@@ -32,7 +32,7 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[feature-inference function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts, model, reduceDimensions, mongoCollection, categoryId } = parsedBody;
+    const { texts, model, reduceDimensions, mongoCollection, categoryId, indexName, namespace } = parsedBody;
     const mongoDb = parsedBody.mongoDb?.toLowerCase();
 
     if (!texts || !Array.isArray(texts)) {
@@ -71,7 +71,9 @@ export const handler: Handler = async (event) => {
       reduceDimensions: reduceDimensions ?? true,
       mongoDb,
       mongoCollection,
-      categoryId
+      categoryId,
+      indexName,
+      namespace
     };
 
     console.log(`[feature-inference function] Calling featureInference() logic...`);
