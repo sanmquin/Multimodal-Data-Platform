@@ -47,14 +47,17 @@ export async function featurePipeline(
   const rawTexts = texts.map((t) => t.text);
 
   // 1. Describe the texts to find the features
+  console.log(`[FeaturePipeline] Describing features for category ${categoryId} and ${rawTexts.length} texts...`);
   const features = await describeFeatures(rawTexts);
 
   if (!features || features.length === 0) {
     console.log(`[FeaturePipeline] No features were generated. Returning early.`);
     return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
   }
+  console.log(`[FeaturePipeline] Generated ${features.length} features.`);
 
   // 2. Evaluate the texts to get numerical quantification of features
+  console.log(`[FeaturePipeline] Evaluating features for all texts...`);
   const evaluations = await evaluateFeatures(rawTexts, features);
   console.log(`[FeaturePipeline] Feature evaluation complete.`);
 
