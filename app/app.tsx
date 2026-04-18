@@ -12,6 +12,7 @@ interface ConfigDefinition {
 
 const configSchema: Record<string, ConfigDefinition> = {
   PINECONE_INDEX: { type: 'text', default: 'your-target-index', label: 'Pinecone Index' },
+  TARGET_INDEX: { type: 'text', default: 'your-target-index', label: 'Target Index' },
   MONGO_DB: { type: 'text', default: 'my_db', label: 'Mongo DB' },
   NAMESPACE: { type: 'text', default: 'your-namespace', label: 'Namespace' },
   MONGO_COLLECTION: { type: 'text', default: 'my_collection_prefix', label: 'Mongo Collection' },

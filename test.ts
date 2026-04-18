@@ -11,7 +11,8 @@ async function run() {
       }
       return { records: {} };
     },
-    upsert: async ({ records }: { records: any[] }) => {
+    upsert: async (arg: any) => {
+      const records = arg.records || arg;
       console.log('Upserting:', JSON.stringify(records, null, 2));
       return;
     },
