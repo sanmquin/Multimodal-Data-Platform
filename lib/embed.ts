@@ -68,19 +68,21 @@ async function processBatch<T extends RecordMetadata = RecordMetadata>(
   const batchIds = batch.map((r) => r.id);
 
   let fetchResponse;
-  try {
-    fetchResponse = await index.fetch({ ids: batchIds });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (err: any) {
-    if (err.name === 'PineconeNotFoundError') {
-      await handleMissingIndex(pc, indexName, model, cloud, region);
+  if (batchIds.length > 0) {
+    try {
       fetchResponse = await index.fetch({ ids: batchIds });
-    } else {
-      throw err;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      if (err.name === 'PineconeNotFoundError') {
+        await handleMissingIndex(pc, indexName, model, cloud, region);
+        fetchResponse = await index.fetch({ ids: batchIds });
+      } else {
+        throw err;
+      }
     }
   }
 
-  const existingRecords = fetchResponse.records || {};
+  const existingRecords = fetchResponse?.records || {};
   const existingIds = new Set(Object.keys(existingRecords));
   const missingRecords = batch.filter((r) => !existingIds.has(r.id));
 
