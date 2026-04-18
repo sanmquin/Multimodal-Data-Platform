@@ -21,7 +21,8 @@ async function generateClusterNameAndDesc(
 
   try {
     const response = await gemmaGenerate(prompt, {
-      systemInstruction: "You are an expert at categorizing text. Always output raw, valid JSON."
+      systemInstruction: "You are an expert at categorizing text. Always output raw, valid JSON.",
+      promptCategory: 'nameClusters'
     });
 
     let text = response.text.trim();
