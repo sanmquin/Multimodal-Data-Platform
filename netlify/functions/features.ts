@@ -50,6 +50,8 @@ export const handler: Handler = async (event) => {
       };
     }
 
+    console.log(`[features function] Category Id: ${categoryId}`);
+
     console.log(`[features function] Validation passed. Delegating ${texts.length} texts to background function...`);
 
     // Determine the host for triggering the background function
