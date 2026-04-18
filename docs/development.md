@@ -35,6 +35,10 @@ If you deploy using Netlify Serverless Functions, ensure these environment varia
 
 By default, the deployed serverless functions include standard CORS headers (e.g. `Access-Control-Allow-Origin: *`). This allows cross-domain frontend applications to make API requests directly to your Netlify endpoints.
 
+## Planning Future Features
+
+Before designing new endpoints or changing existing pipelines, review the dedicated planning guide: [AI Agent Planning Context](agent-planning-context.md). It captures current architecture constraints, known gaps, and a prioritized roadmap intended for AI/human feature planning.
+
 ## Running Tests Locally
 
 To run the local test suite (which mocks network calls):

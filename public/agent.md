@@ -2,6 +2,12 @@
 
 If you are an LLM agent or automated tooling trying to reason about how this package works, refer to the following structure and behavior guarantees.
 
+## Planning Next Features
+
+For repository-wide planning context (architecture boundaries, prioritized roadmap, and known gaps), read [`docs/agent-planning-context.md`](../docs/agent-planning-context.md).
+
+Use this `public/agent.md` for embed API behavior details, and the planning-context doc for feature sequencing decisions.
+
 ### Interface Signatures
 
 ```typescript

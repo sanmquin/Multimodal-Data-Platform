@@ -94,6 +94,12 @@ async function generate() {
 }
 ```
 
+## AI Agent Planning Context
+
+If you are using an AI coding/planning agent, start with the dedicated planning context document: **[docs/agent-planning-context.md](docs/agent-planning-context.md)**.
+
+It summarizes architecture boundaries, pipeline behavior, technical debt, and a prioritized roadmap so an agent can propose the next features with minimal onboarding time.
+
 ## Developer Guide & Deployment
 
 For detailed instructions on setting up your local environment, creating your Pinecone index, or deploying the Cloud API to your own Netlify account, please see our [Development Guide](docs/development.md).
