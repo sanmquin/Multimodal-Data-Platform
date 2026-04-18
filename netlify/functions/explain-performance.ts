@@ -32,7 +32,7 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[explain-performance function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts, model, reduceDimensions, mongoCollection, categoryId, featureName, indexName, namespace } = parsedBody;
+    const { texts, model, reduceDimensions, mongoCollection, categoryId, featureName, indexName, namespace, cloud, region } = parsedBody;
     const mongoDb = parsedBody.mongoDb?.toLowerCase();
 
     if (!texts || !Array.isArray(texts)) {
@@ -74,7 +74,9 @@ export const handler: Handler = async (event) => {
       categoryId,
       featureName,
       indexName,
-      namespace
+      namespace,
+      cloud,
+      region
     };
 
     console.log(`[explain-performance function] Calling explainPerformance() logic...`);

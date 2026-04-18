@@ -21,6 +21,8 @@ export interface ExplainPerformanceOptions {
   reduceDimensions?: boolean;
   indexName?: string;
   namespace?: string;
+  cloud?: string;
+  region?: string;
 }
 
 export interface ExplainPerformanceResult {
@@ -29,7 +31,7 @@ export interface ExplainPerformanceResult {
 }
 
 export async function explainPerformance(options: ExplainPerformanceOptions): Promise<ExplainPerformanceResult> {
-  const { mongoDb, mongoCollection, categoryId, featureName, texts, embedder, pc, model, reduceDimensions, indexName, namespace } = options;
+  const { mongoDb, mongoCollection, categoryId, featureName, texts, embedder, pc, model, reduceDimensions, indexName, namespace, cloud, region } = options;
 
   if (!texts || texts.length === 0) {
     return { correlation: 0, evaluations: [] };
@@ -46,7 +48,9 @@ export async function explainPerformance(options: ExplainPerformanceOptions): Pr
     model,
     reduceDimensions,
     indexName,
-    namespace
+    namespace,
+    cloud,
+    region
   });
 
   if (!evaluations || evaluations.length === 0) {

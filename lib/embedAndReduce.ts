@@ -10,7 +10,10 @@ export interface EmbedAndReduceOptions<T extends RecordMetadata = RecordMetadata
   reduceDimensions?: boolean;
   pcaDimensions?: number;
   index?: Index<T>;
+  indexName?: string;
   namespace?: string;
+  cloud?: string;
+  region?: string;
 }
 
 export interface EmbedAndReduceResult {
@@ -31,7 +34,7 @@ export interface EmbedAndReduceResult {
 export async function embedAndReduce<T extends RecordMetadata = RecordMetadata>(
   options: EmbedAndReduceOptions<T>
 ): Promise<EmbedAndReduceResult> {
-  const { texts, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20, index, namespace } = options;
+  const { texts, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20, index, indexName, namespace, cloud, region } = options;
 
   if (!texts || texts.length === 0) {
     return { points: [], reducedPoints: [], pcaModelJson: undefined };
@@ -41,7 +44,7 @@ export async function embedAndReduce<T extends RecordMetadata = RecordMetadata>(
     throw new Error('You must provide either an embedder function OR a Pinecone instance (pc) and a model string.');
   }
 
-  const { points, stats } = await resolvePoints(texts, index, namespace, embedder, pc, model);
+  const { points, stats } = await resolvePoints(texts, index, indexName, namespace, cloud, region, embedder, pc, model);
 
   const { finalPoints, pcaModelJson } = applyPCAIfRequested(
     points,
@@ -53,7 +56,7 @@ export async function embedAndReduce<T extends RecordMetadata = RecordMetadata>(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function resolvePoints<T extends RecordMetadata>(texts: TextRecord[], index?: Index<T>, namespace?: string, embedder?: any, pc?: any, model?: string) {
+async function resolvePoints<T extends RecordMetadata>(texts: TextRecord[], index?: Index<T>, indexName?: string, namespace?: string, cloud?: string, region?: string, embedder?: any, pc?: any, model?: string) {
   let points: number[][] = [];
   let stats: EmbedStats | undefined;
 
@@ -69,6 +72,9 @@ async function resolvePoints<T extends RecordMetadata>(texts: TextRecord[], inde
       pc,
       model,
       index: targetIndex,
+      indexName,
+      cloud,
+      region,
       returnEmbeddings: true
     });
 
