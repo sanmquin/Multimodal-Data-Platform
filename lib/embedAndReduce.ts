@@ -56,11 +56,16 @@ async function resolvePoints<T extends RecordMetadata>(texts: TextRecord[], inde
   let points: number[][] = [];
   if (index && namespace) {
     const { embed } = await import('./embed');
-    await embed({ texts, embedder, pc, model, index: index.namespace(namespace) as unknown as Index<T> });
+    const result = await embed({
+      texts,
+      embedder,
+      pc,
+      model,
+      index: index.namespace(namespace) as unknown as Index<T>,
+      returnEmbeddings: true
+    });
 
-    const fetchResponse = await index.namespace(namespace).fetch({ ids: texts.map(t => t.id) });
-    const records = fetchResponse.records || {};
-    points = texts.map(t => (records[t.id]?.values as number[]) || []);
+    points = result.embeddings || [];
   } else {
     const textsToEmbed = texts.map((t) => t.text);
     if (embedder) {

@@ -63,8 +63,8 @@ async function handleMissingIndex(
 async function processBatch<T extends RecordMetadata = RecordMetadata>(
   batch: TextRecord[],
   options: EmbedOptions<T>
-): Promise<number> {
-  const { index, embedder, pc, model, indexName, cloud, region } = options;
+): Promise<{ batchWrites: number, batchEmbeddings?: number[][] }> {
+  const { index, embedder, pc, model, indexName, cloud, region, returnEmbeddings } = options;
   const batchIds = batch.map((r) => r.id);
 
   let fetchResponse;
@@ -80,20 +80,24 @@ async function processBatch<T extends RecordMetadata = RecordMetadata>(
     }
   }
 
-  const existingIds = new Set(Object.keys(fetchResponse.records || {}));
+  const existingRecords = fetchResponse.records || {};
+  const existingIds = new Set(Object.keys(existingRecords));
   const missingRecords = batch.filter((r) => !existingIds.has(r.id));
+
+  let batchWrites = 0;
+  let missingEmbeddings: number[][] = [];
 
   if (missingRecords.length > 0) {
     const textsToEmbed = missingRecords.map((r) => r.text);
-    const embeddings = await resolveEmbeddings(textsToEmbed, embedder, pc, model);
+    missingEmbeddings = await resolveEmbeddings(textsToEmbed, embedder, pc, model);
 
-    if (embeddings.length !== missingRecords.length) {
-      throw new Error(`Embedder returned ${embeddings.length} embeddings for ${missingRecords.length} texts.`);
+    if (missingEmbeddings.length !== missingRecords.length) {
+      throw new Error(`Embedder returned ${missingEmbeddings.length} embeddings for ${missingRecords.length} texts.`);
     }
 
     const vectors: PineconeRecord<T>[] = missingRecords.map((record, i) => ({
       id: record.id,
-      values: embeddings[i],
+      values: missingEmbeddings[i],
       metadata: {
         ...record.metadata,
         text: record.text,
@@ -101,21 +105,39 @@ async function processBatch<T extends RecordMetadata = RecordMetadata>(
     }));
 
     await index.upsert({ records: vectors });
-    return missingRecords.length;
+    batchWrites = missingRecords.length;
   }
-  return 0;
+
+  let batchEmbeddings: number[][] | undefined;
+  if (returnEmbeddings) {
+    batchEmbeddings = [];
+    let missingIndex = 0;
+    for (const record of batch) {
+      if (existingIds.has(record.id)) {
+        batchEmbeddings.push(existingRecords[record.id].values as number[]);
+      } else {
+        batchEmbeddings.push(missingEmbeddings[missingIndex]);
+        missingIndex++;
+      }
+    }
+  }
+
+  return { batchWrites, batchEmbeddings };
 }
 
 export async function embed<T extends RecordMetadata = RecordMetadata>(
   options: EmbedOptions<T>
 ): Promise<EmbedStats> {
-  const { texts, embedder, pc, model, batchSize = 50 } = options;
+  const { texts, embedder, pc, model, batchSize = 50, returnEmbeddings } = options;
   const startTime = Date.now();
   let writes = 0;
   let errors = 0;
+  let embeddings: number[][] | undefined = returnEmbeddings ? [] : undefined;
 
   if (!texts || texts.length === 0) {
-    return { writes, errors, elapsedMs: Date.now() - startTime };
+    const stats: EmbedStats = { writes, errors, elapsedMs: Date.now() - startTime };
+    if (returnEmbeddings) stats.embeddings = [];
+    return stats;
   }
 
   if (!embedder && (!pc || !model)) {
@@ -126,14 +148,24 @@ export async function embed<T extends RecordMetadata = RecordMetadata>(
 
   for (const batch of batches) {
     try {
-      const batchWrites = await processBatch(batch, options);
+      const { batchWrites, batchEmbeddings } = await processBatch(batch, options);
       writes += batchWrites;
+      if (returnEmbeddings && batchEmbeddings) {
+        embeddings!.push(...batchEmbeddings);
+      }
     } catch (err) {
       console.error('Error processing batch:', err);
       errors += batch.length;
+      if (returnEmbeddings) {
+        for (let i = 0; i < batch.length; i++) {
+          embeddings!.push([]);
+        }
+      }
     }
   }
 
   const elapsedMs = Date.now() - startTime;
-  return { writes, errors, elapsedMs };
+  const stats: EmbedStats = { writes, errors, elapsedMs };
+  if (returnEmbeddings) stats.embeddings = embeddings;
+  return stats;
 }
