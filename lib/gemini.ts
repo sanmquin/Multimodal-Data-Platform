@@ -20,9 +20,11 @@ export interface GeminiOptions {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function logPrompt(category: string, model: string, prompt: string, result: any, elapsedTime: number) {
   try {
-    if (await connectMongoose('mmdo')) {
-      const { PromptModel } = getPromptModels('default');
+    if (await connectMongoose('mm-dp')) {
+      const { PromptModel } = getPromptModels('prompts');
       await PromptModel.create({ category, model, prompt, result, elapsedTime });
+    } else {
+      console.error('Failed to connect to Mongo database: mm-dp');
     }
   } catch (err) {
     console.error('Failed to log gemini prompt to Mongo:', err);

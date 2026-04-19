@@ -93,7 +93,7 @@ export function getFeatureModels(mongoCollection: string) {
   return { PCAModel, FeatureModel, EvaluationModel, PerformanceModel };
 }
 
-export function getPromptModels(mongoCollection: string) {
+export function getPromptModels(collectionName: string = 'prompts') {
   const promptSchema = new mongoose.Schema({
     category: String,
     model: String,
@@ -103,7 +103,7 @@ export function getPromptModels(mongoCollection: string) {
     createdAt: { type: Date, default: Date.now }
   });
 
-  const PromptModel = mongoose.models[`${mongoCollection}_prompts`] || mongoose.model(`${mongoCollection}_prompts`, promptSchema, `${mongoCollection}_prompts`);
+  const PromptModel = mongoose.models[collectionName] || mongoose.model(collectionName, promptSchema, collectionName);
 
   return { PromptModel };
 }

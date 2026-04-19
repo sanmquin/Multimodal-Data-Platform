@@ -53,13 +53,14 @@ export const handler: Handler = async (event) => {
     // Trigger the background function asynchronously. We must await the request being sent successfully
     // before returning 202, otherwise the serverless function execution container could freeze and kill the request.
     try {
-      await fetch(backgroundUrl, {
+      const response = await fetch(backgroundUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: bodyText
       });
+      await response.text(); // Consume the response body to ensure the request completes
       console.log(`[cluster function] Background function triggered successfully. Returning 202 Accepted.`);
     } catch (err) {
       console.error(`[cluster function] Error triggering background function:`, err);
