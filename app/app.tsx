@@ -16,6 +16,8 @@ const configSchema: Record<string, ConfigDefinition> = {
   MONGO_DB: { type: 'text', default: 'my_db', label: 'Mongo DB' },
   NAMESPACE: { type: 'text', default: 'your-namespace', label: 'Namespace' },
   MONGO_COLLECTION: { type: 'text', default: 'my_collection_prefix', label: 'Mongo Collection' },
+  CLUSTERS_MONGO_COLLECTION: { type: 'text', default: 'clusters_prefix', label: 'Clusters Mongo Collection' },
+  FEATURES_MONGO_COLLECTION: { type: 'text', default: 'features_prefix', label: 'Features Mongo Collection' },
   CONTEXT: { type: 'text', default: 'General overarching context for the clustering task.', label: 'Context' },
   MODEL: { type: 'text', default: 'multilingual-e5-large', label: 'Model' },
   NUM_CLUSTERS: { type: 'number', default: '2', label: 'Num Clusters' },
@@ -241,6 +243,10 @@ const Playground = () => {
         // Need to pass mongo details from text or hardcode for test
         body.mongoDb = parsedInput.mongoDb || localStorage.getItem('MONGO_DB');
         body.mongoCollection = parsedInput.mongoCollection || localStorage.getItem('MONGO_COLLECTION');
+        if (endpoint === 'aggregate-features') {
+          body.clustersMongoCollection = parsedInput.clustersMongoCollection || localStorage.getItem('CLUSTERS_MONGO_COLLECTION');
+          body.featuresMongoCollection = parsedInput.featuresMongoCollection || localStorage.getItem('FEATURES_MONGO_COLLECTION');
+        }
       }
       if (endpoint === 'describe-features') {
         body.categoryId = parsedInput.categoryId || localStorage.getItem('CATEGORY_ID');

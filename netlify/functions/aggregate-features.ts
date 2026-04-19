@@ -31,8 +31,10 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[aggregate-features function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { categoryIds, clusterId, mongoCollection } = parsedBody;
+    const { categoryIds, clusterId } = parsedBody;
     const mongoDb = parsedBody.mongoDb?.toLowerCase();
+    const clustersMongoCollection = parsedBody.clustersMongoCollection || parsedBody.mongoCollection;
+    const featuresMongoCollection = parsedBody.featuresMongoCollection || parsedBody.mongoCollection;
 
     if (!categoryIds || !Array.isArray(categoryIds) || categoryIds.length === 0) {
       console.warn(`[aggregate-features function] Validation failed: categoryIds array is required.`);
@@ -52,12 +54,12 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    if (!mongoDb || !mongoCollection) {
-      console.warn(`[aggregate-features function] Validation failed: mongoDb and mongoCollection are required.`);
+    if (!mongoDb || !clustersMongoCollection || !featuresMongoCollection) {
+      console.warn(`[aggregate-features function] Validation failed: mongoDb, clustersMongoCollection, and featuresMongoCollection are required.`);
       return {
         statusCode: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'mongoDb and mongoCollection are required' })
+        body: JSON.stringify({ error: 'mongoDb, clustersMongoCollection, and featuresMongoCollection are required' })
       };
     }
 
@@ -67,7 +69,8 @@ export const handler: Handler = async (event) => {
       categoryIds,
       clusterId,
       mongoDb,
-      mongoCollection
+      clustersMongoCollection,
+      featuresMongoCollection
     });
 
     console.log(`[aggregate-features function] Completed aggregating ${features.length} features.`);
