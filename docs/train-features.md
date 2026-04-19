@@ -53,11 +53,13 @@ Data is stored in three separate collections based on the `mongoCollection` pref
 
 1.  **`[prefix]_pca`**: Stores the PCA model used for dimensionality reduction.
     *   `categoryId` (String): The associated category identifier.
+    *   `version` (Number): The version of the feature training run. Defaults to 1 and increments per run.
     *   `modelBuffer` (Buffer): The serialized PCA model.
     *   `createdAt` (Date): The time the model was saved.
 
 2.  **`[prefix]_features`**: Stores the descriptive features generated from the text snippets along with their associated regression models.
     *   `categoryId` (String): The associated category identifier.
+    *   `version` (Number): The version of the feature training run. Defaults to 1 and increments per run.
     *   `name` (String): The generated name of the feature.
     *   `description` (String): A detailed description of the feature.
     *   `modelBuffer` (Buffer): The serialized trained multivariate linear regression model mapping embeddings to this specific feature's evaluations.
@@ -67,6 +69,7 @@ Data is stored in three separate collections based on the `mongoCollection` pref
 
 3.  **`[prefix]_evaluations`**: Stores the numerical evaluation of each text against the identified features.
     *   `categoryId` (String): The associated category identifier.
+    *   `version` (Number): The version of the feature training run. Defaults to 1 and increments per run.
     *   `textId` (String): The ID of the original text snippet.
     *   `text` (String): The original text content.
     *   `evaluations` (Array of Objects): The evaluations for this text.
@@ -74,6 +77,8 @@ Data is stored in three separate collections based on the `mongoCollection` pref
         *   `score` (Number): The numerical score assigned to the text for this feature.
         *   `inferenceValue` (Number): The predicted value for the text from the linear regression model for this feature.
     *   `createdAt` (Date): The time the evaluation was created.
+
+When querying the collections directly, you should sort the items by `version` descending (`sort({ version: -1 })`) to get the latest trained features and models.
 
 ### Agent Prompt
 
