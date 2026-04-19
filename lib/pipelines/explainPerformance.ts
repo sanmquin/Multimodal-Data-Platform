@@ -79,8 +79,12 @@ export async function explainPerformance(options: ExplainPerformanceOptions): Pr
   const correlation = sampleCorrelation(featureValues, outputValues);
 
   if (await connectMongoose(mongoDb)) {
-    const { PerformanceModel } = getFeatureModels(mongoCollection);
-    await PerformanceModel.create({ categoryId, featureName, correlation });
+    const { PerformanceModel, FeatureModel } = getFeatureModels(mongoCollection);
+
+    const latestFeature = await FeatureModel.findOne({ categoryId }).sort({ version: -1 });
+    const currentVersion = latestFeature ? latestFeature.version || 1 : 1;
+
+    await PerformanceModel.create({ categoryId, version: currentVersion, featureName, correlation });
   }
 
   return { correlation, evaluations };

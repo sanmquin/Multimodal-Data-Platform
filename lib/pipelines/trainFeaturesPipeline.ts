@@ -84,9 +84,16 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, fe
 
     const { FeatureModel, EvaluationModel, PCAModel } = getFeatureModels(mongoCollection);
 
+    let currentVersion = 1;
+    const latestFeature = await FeatureModel.findOne({ categoryId }).sort({ version: -1 });
+    if (latestFeature && latestFeature.version) {
+      currentVersion = latestFeature.version + 1;
+    }
+
     if (features && features.length > 0) {
       const mappedFeatures = features.map(f => ({
         categoryId,
+        version: currentVersion,
         name: f.name,
         description: f.description,
         modelBuffer: f.modelJson ? Buffer.from(JSON.stringify(f.modelJson), 'utf-8') : undefined,
@@ -103,6 +110,7 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, fe
         return {
           ...ev,
           categoryId,
+          version: currentVersion,
           textId: textRecord ? textRecord.id : undefined
         };
       });
@@ -110,7 +118,7 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, fe
     }
 
     if (pcaModelJson) {
-      await PCAModel.create({ categoryId, modelBuffer: Buffer.from(JSON.stringify(pcaModelJson), 'utf-8') });
+      await PCAModel.create({ categoryId, version: currentVersion, modelBuffer: Buffer.from(JSON.stringify(pcaModelJson), 'utf-8') });
     }
 
   } catch (err) {

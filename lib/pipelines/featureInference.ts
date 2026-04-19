@@ -27,7 +27,11 @@ export async function featureInference(options: FeatureInferenceOptions): Promis
   if (!texts || texts.length === 0 || !(await connectMongoose(mongoDb))) return [];
 
   const { FeatureModel, EvaluationModel, PCAModel } = getFeatureModels(mongoCollection);
-  const featureDocs = await FeatureModel.find({ categoryId }).lean();
+
+  const latestFeature = await FeatureModel.findOne({ categoryId }).sort({ version: -1 });
+  const currentVersion = latestFeature ? latestFeature.version || 1 : 1;
+
+  const featureDocs = await FeatureModel.find({ categoryId, version: currentVersion }).lean();
 
   if (!featureDocs || featureDocs.length === 0) return [];
 
@@ -40,7 +44,7 @@ export async function featureInference(options: FeatureInferenceOptions): Promis
 
   let inferenceInputs = points;
   if (reduceDimensions) {
-    const pcaDoc = await PCAModel.findOne({ categoryId }).lean();
+    const pcaDoc = await PCAModel.findOne({ categoryId, version: currentVersion }).lean();
     if (pcaDoc && pcaDoc.modelBuffer) {
       const pca = PCA.load(JSON.parse(pcaDoc.modelBuffer.toString('utf-8')));
       inferenceInputs = pca.predict(points).to2DArray();
@@ -57,19 +61,19 @@ export async function featureInference(options: FeatureInferenceOptions): Promis
     allPredictions[feature.name] = predictions.map((p) => p[0]);
   }
 
-  return saveInferences(texts, allPredictions, validFeatures, categoryId, EvaluationModel);
+  return saveInferences(texts, allPredictions, validFeatures, categoryId, currentVersion, EvaluationModel);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function saveInferences(texts: TextRecord[], allPredictions: Record<string, number[]>, features: any[], categoryId: string, EvaluationModel: any): Promise<TextFeatureEvaluation[]> {
+async function saveInferences(texts: TextRecord[], allPredictions: Record<string, number[]>, features: any[], categoryId: string, currentVersion: number, EvaluationModel: any): Promise<TextFeatureEvaluation[]> {
   const updatedEvaluations: TextFeatureEvaluation[] = [];
 
   for (let i = 0; i < texts.length; i++) {
     const textRecord = texts[i];
 
-    let evaluationDoc = await EvaluationModel.findOne({ categoryId, textId: textRecord.id });
+    let evaluationDoc = await EvaluationModel.findOne({ categoryId, version: currentVersion, textId: textRecord.id });
     if (!evaluationDoc) {
-      evaluationDoc = new EvaluationModel({ categoryId, textId: textRecord.id, text: textRecord.text, evaluations: [] });
+      evaluationDoc = new EvaluationModel({ categoryId, version: currentVersion, textId: textRecord.id, text: textRecord.text, evaluations: [] });
     }
 
     for (const feature of features) {

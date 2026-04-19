@@ -107,6 +107,6 @@ The API returns a `200 OK` JSON response containing the text evaluations:
 ### Behavioral Guarantees
 
 1. **Synchronous Inference:** The API embeds the provided text array, applies PCA dimensionality reduction (if configured), and predicts feature evaluations by loading the saved models from MongoDB using Mongoose.
-2. **MongoDB Retrieval:** Retrieves `[prefix]_pca` and `[prefix]_features` from the provided `categoryId` to construct inference pipelines.
+2. **MongoDB Retrieval:** Retrieves `[prefix]_pca` and `[prefix]_features` from the provided `categoryId` using the latest available `version` (sorting by `version` descending) to construct inference pipelines. The evaluations are persisted with this same latest version.
 ````
 <button id="copy-agent-btn-feature-inference" class="button is-small is-link mt-2">Copy Instructions</button>
