@@ -32,7 +32,7 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[feature-inference function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts, model, reduceDimensions, mongoCollection, categoryId, indexName, namespace, cloud, region } = parsedBody;
+    const { texts, model, reduceDimensions, mongoCollection, categoryId, clusterId, indexName, namespace, cloud, region } = parsedBody;
     const mongoDb = parsedBody.mongoDb?.toLowerCase();
 
     if (!texts || !Array.isArray(texts)) {
@@ -44,12 +44,12 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    if (!mongoDb || !mongoCollection || !categoryId) {
-      console.warn(`[feature-inference function] Validation failed: mongoDb, mongoCollection, and categoryId are required.`);
+    if (!mongoDb || !mongoCollection || (!categoryId && !clusterId)) {
+      console.warn(`[feature-inference function] Validation failed: mongoDb, mongoCollection, and either categoryId or clusterId are required.`);
       return {
         statusCode: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'mongoDb, mongoCollection, and categoryId are required' })
+        body: JSON.stringify({ error: 'mongoDb, mongoCollection, and either categoryId or clusterId are required' })
       };
     }
 
@@ -72,6 +72,7 @@ export const handler: Handler = async (event) => {
       mongoDb,
       mongoCollection,
       categoryId,
+      clusterId,
       indexName,
       namespace,
       cloud,

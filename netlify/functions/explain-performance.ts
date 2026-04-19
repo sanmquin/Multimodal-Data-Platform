@@ -32,7 +32,7 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[explain-performance function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts, model, reduceDimensions, mongoCollection, categoryId, featureName, indexName, namespace, cloud, region } = parsedBody;
+    const { texts, model, reduceDimensions, mongoCollection, categoryId, clusterId, featureName, indexName, namespace, cloud, region } = parsedBody;
     const mongoDb = parsedBody.mongoDb?.toLowerCase();
 
     if (!texts || !Array.isArray(texts)) {
@@ -44,12 +44,12 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    if (!mongoDb || !mongoCollection || !categoryId || !featureName) {
-      console.warn(`[explain-performance function] Validation failed: mongoDb, mongoCollection, categoryId, and featureName are required.`);
+    if (!mongoDb || !mongoCollection || (!categoryId && !clusterId) || !featureName) {
+      console.warn(`[explain-performance function] Validation failed: mongoDb, mongoCollection, either categoryId or clusterId, and featureName are required.`);
       return {
         statusCode: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'mongoDb, mongoCollection, categoryId, and featureName are required' })
+        body: JSON.stringify({ error: 'mongoDb, mongoCollection, either categoryId or clusterId, and featureName are required' })
       };
     }
 
@@ -72,6 +72,7 @@ export const handler: Handler = async (event) => {
       mongoDb,
       mongoCollection,
       categoryId,
+      clusterId,
       featureName,
       indexName,
       namespace,

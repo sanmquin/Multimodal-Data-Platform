@@ -16,7 +16,9 @@ export interface TrainFeaturesPipelineOptions {
   pcaDimensions?: number;
   mongoDb?: string;
   mongoCollection?: string;
-  categoryId: string;
+  categoryId?: string;
+  clusterId?: string;
+  isClustered?: boolean;
   indexName?: string;
   namespace?: string;
   cloud?: string;
@@ -42,7 +44,7 @@ export interface TrainFeaturesPipelineResult {
 export async function trainFeaturesPipeline(
   options: TrainFeaturesPipelineOptions
 ): Promise<TrainFeaturesPipelineResult> {
-  const { texts, features, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20, mongoDb, mongoCollection, categoryId, indexName, namespace, cloud, region } = options;
+  const { texts, features, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20, mongoDb, mongoCollection, categoryId, clusterId, isClustered = false, indexName, namespace, cloud, region } = options;
 
   if (!texts || texts.length === 0) return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
   if (!features || features.length === 0) return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
@@ -69,7 +71,7 @@ export async function trainFeaturesPipeline(
 
   if (mongoDb && mongoCollection) {
     console.log(`[TrainFeaturesPipeline] Storing pipeline results to MongoDB collection: ${mongoCollection}`);
-    await storeFeaturesToMongo(mongoDb, mongoCollection, features, evaluations, pcaModelJson, categoryId, texts);
+    await storeFeaturesToMongo(mongoDb, mongoCollection, features, evaluations, pcaModelJson, categoryId, clusterId, isClustered, texts);
     console.log(`[TrainFeaturesPipeline] Storage to MongoDB complete.`);
   }
 
@@ -78,14 +80,15 @@ export async function trainFeaturesPipeline(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, features: Feature[], evaluations: TextFeatureEvaluation[], pcaModelJson: any, categoryId: string, texts?: TextRecord[]) {
+async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, features: Feature[], evaluations: TextFeatureEvaluation[], pcaModelJson: any, categoryId?: string, clusterId?: string, isClustered?: boolean, texts?: TextRecord[]) {
   try {
     if (!(await connectMongoose(mongoDb))) return;
 
     const { FeatureModel, EvaluationModel, PCAModel } = getFeatureModels(mongoCollection);
 
     let currentVersion = 1;
-    const latestFeature = await FeatureModel.findOne({ categoryId }).sort({ version: -1 });
+    const query = categoryId ? { categoryId } : clusterId ? { clusterId } : {};
+    const latestFeature = await FeatureModel.findOne(query).sort({ version: -1 });
     if (latestFeature && latestFeature.version) {
       currentVersion = latestFeature.version + 1;
     }
@@ -93,6 +96,8 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, fe
     if (features && features.length > 0) {
       const mappedFeatures = features.map(f => ({
         categoryId,
+        clusterId,
+        isClustered,
         version: currentVersion,
         name: f.name,
         description: f.description,
@@ -110,6 +115,7 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, fe
         return {
           ...ev,
           categoryId,
+          clusterId,
           version: currentVersion,
           textId: textRecord ? textRecord.id : undefined
         };
@@ -118,7 +124,7 @@ async function storeFeaturesToMongo(mongoDb: string, mongoCollection: string, fe
     }
 
     if (pcaModelJson) {
-      await PCAModel.create({ categoryId, version: currentVersion, modelBuffer: Buffer.from(JSON.stringify(pcaModelJson), 'utf-8') });
+      await PCAModel.create({ categoryId, clusterId, version: currentVersion, modelBuffer: Buffer.from(JSON.stringify(pcaModelJson), 'utf-8') });
     }
 
   } catch (err) {

@@ -41,7 +41,7 @@ async function fetchInputFeatures(FeatureModel: any, categoryIds: string[]): Pro
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function generateAggregatedFeatures(clusterData: any, featuresData: Feature[]): Promise<Feature[]> {
   let prompt = getPrompt('aggregateFeatures') || '';
-  prompt = prompt.replace('{{clusterData}}', JSON.stringify(clusterData, null, 2));
+  prompt = prompt.replace('{{clusterData}}', `Name: ${clusterData.name}\nDescription: ${clusterData.description}`);
   prompt = prompt.replace('{{featuresData}}', JSON.stringify(featuresData, null, 2));
 
   const schema = {

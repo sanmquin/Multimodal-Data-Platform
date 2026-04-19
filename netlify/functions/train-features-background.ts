@@ -32,7 +32,7 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[train-features-background function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts, features, model, reduceDimensions, pcaDimensions, mongoCollection, categoryId, indexName, namespace, cloud, region } = parsedBody;
+    const { texts, features, model, reduceDimensions, pcaDimensions, mongoCollection, categoryId, clusterId, isClustered, indexName, namespace, cloud, region } = parsedBody;
     const mongoDb = parsedBody.mongoDb?.toLowerCase();
 
     if (!texts || !Array.isArray(texts)) {
@@ -53,12 +53,12 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    if (!categoryId) {
-      console.warn(`[train-features-background function] Validation failed: categoryId is required.`);
+    if (!categoryId && !clusterId) {
+      console.warn(`[train-features-background function] Validation failed: categoryId or clusterId is required.`);
       return {
         statusCode: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'categoryId is required' })
+        body: JSON.stringify({ error: 'categoryId or clusterId is required' })
       };
     }
 
@@ -83,6 +83,8 @@ export const handler: Handler = async (event) => {
       mongoDb,
       mongoCollection,
       categoryId,
+      clusterId,
+      isClustered,
       indexName,
       namespace,
       cloud,
