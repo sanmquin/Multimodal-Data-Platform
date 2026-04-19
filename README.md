@@ -24,7 +24,8 @@ The platform exposes the following Netlify serverless endpoints. All endpoints h
 | `POST /.netlify/functions/embed` | Synchronous | Embed texts into Pinecone with optional PCA + MongoDB persistence. |
 | `POST /.netlify/functions/cluster` | Async (202) | Embed, cluster, name clusters with Gemma, save to MongoDB. |
 | `POST /.netlify/functions/refine-clusters` | Async (202) | Re-generate a MECE cluster taxonomy using Gemini. |
-| `POST /.netlify/functions/features` | Async (202) | Extract features, evaluate texts, train regression models, save to MongoDB. |
+| `POST /.netlify/functions/describe-features` | Synchronous | Extract dynamic, quantitative semantic features from texts using Gemini. |
+| `POST /.netlify/functions/train-features` | Async (202) | Evaluate texts against features, train regression models, save to MongoDB. |
 | `POST /.netlify/functions/feature-inference` | Synchronous | Score new texts against saved feature models. |
 | `POST /.netlify/functions/explain-performance` | Synchronous | Pearson-correlate feature predictions against a numeric output metric. |
 
@@ -110,15 +111,24 @@ namedClusters.forEach(c => console.log(c.name, '-', c.summary));
 
 ```typescript
 import { Pinecone } from '@pinecone-database/pinecone';
-import { featurePipeline } from 'multimodal-data-platform';
+import { describeFeatures, trainFeaturesPipeline } from 'multimodal-data-platform';
 
 const pc = new Pinecone({ apiKey: 'YOUR_PINECONE_API_KEY' });
 
-const result = await featurePipeline({
+// 1. Describe the features present in the corpus
+const features = await describeFeatures([
+  'Learning algorithms require data.',
+  'Scaling infra requires planning.'
+]);
+console.log('Features found:', features.map(f => f.name));
+
+// 2. Train regression models for those features against text embeddings
+const result = await trainFeaturesPipeline({
   texts: [
     { id: '1', text: 'Learning algorithms require data.' },
     { id: '2', text: 'Scaling infra requires planning.' },
   ],
+  features,
   pc,
   model: 'multilingual-e5-large',
   categoryId: 'batch-2024-q1',
@@ -126,7 +136,7 @@ const result = await featurePipeline({
   mongoCollection: 'my_features',
 });
 
-console.log('Features found:', result.features.map(f => f.name));
+console.log('Training complete.');
 ```
 
 ### Predict feature scores for new texts

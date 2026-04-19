@@ -1,12 +1,12 @@
-# Features API
+# Train Features API
 
-This endpoint receives a list of texts, validates the payload synchronously, and then delegates the extraction of features, their evaluation, text embedding, dimensionality reduction, and regression modeling to a background job.
+This endpoint receives a list of texts and predefined features, validates the payload synchronously, and then delegates their evaluation, text embedding, dimensionality reduction, and regression modeling to a background job.
 
 ## Cloud API (Netlify Function)
 
 The endpoint handles the initial validation. If successful, it triggers a background function and immediately returns a `202 Accepted` status to let you know the process has started asynchronously.
 
-`POST {{DOMAIN}}/.netlify/functions/features`
+`POST {{DOMAIN}}/.netlify/functions/train-features`
 
 ### Payload structure
 
@@ -15,6 +15,9 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
   "texts": [
     { "id": "1", "text": "Learning machine learning algorithms requires strong mathematical foundations." },
     { "id": "2", "text": "The new cloud infrastructure scales automatically based on traffic." }
+  ],
+  "features": [
+    { "name": "Mathematical Complexity", "description": "Degree of advanced math required." }
   ],
   "model": "{{MODEL}}",
   "reduceDimensions": {{REDUCE_DIMENSIONS}},
@@ -27,7 +30,8 @@ The endpoint handles the initial validation. If successful, it triggers a backgr
 }
 ```
 
-- **texts**: Array of objects containing text records to analyze and embed.
+- **texts**: Array of objects containing text records to evaluate and embed.
+- **features**: Array of feature objects with `name` and `description` to evaluate against the texts.
 - **model**: The embedding model to use (e.g., `"multilingual-e5-large"`). Defaults to `"multilingual-e5-large"`.
 - **reduceDimensions**: Set to `true` to reduce the dimensionality of the generated embeddings using PCA. Defaults to `true`.
 - **pcaDimensions**: The target number of dimensions for PCA reduction. Defaults to 20.
@@ -43,7 +47,7 @@ The function depends on the `PINECONE_API_KEY` environment variable to authorize
 
 ### Querying Results
 
-If you provide the `mongoDb` and `mongoCollection` parameters in your payload, the results of the feature extraction and modeling operations will be persisted to MongoDB.
+If you provide the `mongoDb` and `mongoCollection` parameters in your payload, the results of the feature evaluation and modeling operations will be persisted to MongoDB.
 
 Data is stored in three separate collections based on the `mongoCollection` prefix you provide:
 
@@ -76,13 +80,13 @@ Data is stored in three separate collections based on the `mongoCollection` pref
 If you are an LLM agent or an automated tooling developer, you can quickly write integration code by copying the prompt below and sending it to your agent:
 
 ````text
-Please write code to integrate the multimodal data platform features background API.
+Please write code to integrate the multimodal data platform train features background API.
 
-# Multimodal Data Platform - Features Background Agentic Documentation
+# Multimodal Data Platform - Train Features Background Agentic Documentation
 
 ### API Endpoint Signature
 
-**Endpoint URL**: `POST {{DOMAIN}}/.netlify/functions/features`
+**Endpoint URL**: `POST {{DOMAIN}}/.netlify/functions/train-features`
 **Content-Type**: `application/json`
 
 #### Request Payload Structure
@@ -91,6 +95,9 @@ Please write code to integrate the multimodal data platform features background 
 {
   "texts": [
     { "id": "string", "text": "string" }
+  ],
+  "features": [
+    { "name": "string", "description": "string" }
   ],
   "model": "{{MODEL}}",
   "reduceDimensions": {{REDUCE_DIMENSIONS}},
@@ -107,6 +114,9 @@ Please write code to integrate the multimodal data platform features background 
 *   `texts` (**Required**): Array of objects containing text records.
     *   `id` (**Required**): The unique identifier for the text snippet.
     *   `text` (**Required**): The text content to analyze.
+*   `features` (**Required**): Array of feature objects to evaluate.
+    *   `name` (**Required**): Name of the feature.
+    *   `description` (**Required**): Description of the feature.
 *   `model` (*Optional*): The embedding model to use. Defaults to `multilingual-e5-large`.
 *   `reduceDimensions` (*Optional*): Set to `true` to perform PCA dimensionality reduction on embeddings. Defaults to `true`.
 *   `pcaDimensions` (*Optional*): Number of dimensions to reduce to. Defaults to 20.
@@ -122,8 +132,8 @@ Background functions return an HTTP `202 Accepted` status immediately and proces
 
 ### Behavioral Guarantees
 
-1. **Sequential Processing:** The background job extracts features from texts, numerically evaluates the texts against the features, generates embeddings for the texts (with optional PCA reduction), and trains a separate multivariate linear regression model per feature to predict the individual feature scores from the embeddings.
+1. **Sequential Processing:** The background job numerically evaluates the texts against the provided features, generates embeddings for the texts (with optional PCA reduction), and trains a separate multivariate linear regression model per feature to predict the individual feature scores from the embeddings.
 2. **Asynchronous Execution:** The API returns a `202 Accepted` immediately. You must check the MongoDB collections or execution logs to see the final outputs.
 3. **MongoDB Persistence:** If configured, the resulting data is persisted into three separate collections in MongoDB using Mongoose, enabling querying and further analysis.
 ````
-<button id="copy-agent-btn-features" class="button is-small is-link mt-2">Copy Instructions</button>
+<button id="copy-agent-btn-train-features" class="button is-small is-link mt-2">Copy Instructions</button>

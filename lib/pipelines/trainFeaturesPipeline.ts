@@ -1,14 +1,14 @@
 import { Pinecone } from '@pinecone-database/pinecone';
 import MLR from 'ml-regression-multivariate-linear';
-import { describeFeatures } from '../describeFeatures';
 import { evaluateFeatures } from '../evaluateFeatures';
 import { embedAndReduce } from '../embedAndReduce';
 import { Feature, TextFeatureEvaluation, TextRecord } from '../types';
 import { connectMongoose } from '../mongo';
 import { getFeatureModels } from '../models';
 
-export interface FeaturePipelineOptions {
+export interface TrainFeaturesPipelineOptions {
   texts: TextRecord[];
+  features: Feature[];
   embedder?: (texts: string[]) => Promise<number[][]>;
   pc?: Pinecone;
   model?: string;
@@ -23,7 +23,7 @@ export interface FeaturePipelineOptions {
   region?: string;
 }
 
-export interface FeaturePipelineResult {
+export interface TrainFeaturesPipelineResult {
   features: Feature[];
   evaluations: TextFeatureEvaluation[];
   points: number[][];
@@ -33,34 +33,27 @@ export interface FeaturePipelineResult {
 }
 
 /**
- * A pipeline that extracts features from texts, evaluates them,
- * and generates and reduces embeddings for the texts.
+ * A pipeline that evaluates predefined features against texts,
+ * and generates and reduces embeddings for the texts to train regression models.
  *
- * @param options - Options for the feature pipeline.
+ * @param options - Options for the train features pipeline.
  * @returns A promise resolving to the pipeline results.
  */
-export async function featurePipeline(
-  options: FeaturePipelineOptions
-): Promise<FeaturePipelineResult> {
-  const { texts, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20, mongoDb, mongoCollection, categoryId, indexName, namespace, cloud, region } = options;
+export async function trainFeaturesPipeline(
+  options: TrainFeaturesPipelineOptions
+): Promise<TrainFeaturesPipelineResult> {
+  const { texts, features, embedder, pc, model, reduceDimensions = true, pcaDimensions = 20, mongoDb, mongoCollection, categoryId, indexName, namespace, cloud, region } = options;
 
   if (!texts || texts.length === 0) return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
+  if (!features || features.length === 0) return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
 
   const rawTexts = texts.map((t) => t.text);
-  console.log(`[FeaturePipeline] Describing features for category ${categoryId} and ${rawTexts.length} texts...`);
-  const features = await describeFeatures(rawTexts);
 
-  if (!features || features.length === 0) {
-    console.log(`[FeaturePipeline] No features were generated. Returning early.`);
-    return { features: [], evaluations: [], points: [], reducedPoints: [], pcaModelJson: undefined };
-  }
-  console.log(`[FeaturePipeline] Generated ${features.length} features.`);
-
-  console.log(`[FeaturePipeline] Evaluating features for all texts...`);
+  console.log(`[TrainFeaturesPipeline] Evaluating features for all texts...`);
   const evaluations = await evaluateFeatures(rawTexts, features);
-  console.log(`[FeaturePipeline] Feature evaluation complete.`);
+  console.log(`[TrainFeaturesPipeline] Feature evaluation complete.`);
 
-  console.log(`[FeaturePipeline] Generating embeddings and optionally reducing dimensions...`);
+  console.log(`[TrainFeaturesPipeline] Generating embeddings and optionally reducing dimensions...`);
   const { points, reducedPoints, pcaModelJson } = await embedAndReduce({
     texts, embedder, pc, model, reduceDimensions, pcaDimensions,
     index: pc && indexName ? pc.index(indexName) : undefined,
@@ -70,17 +63,17 @@ export async function featurePipeline(
     region
   });
 
-  console.log(`[FeaturePipeline] Training linear regression models for features...`);
+  console.log(`[TrainFeaturesPipeline] Training linear regression models for features...`);
   const X = reduceDimensions && reducedPoints && reducedPoints.length > 0 ? reducedPoints : points;
   trainAndEvaluateRegression(X, evaluations, features);
 
   if (mongoDb && mongoCollection) {
-    console.log(`[FeaturePipeline] Storing pipeline results to MongoDB collection: ${mongoCollection}`);
+    console.log(`[TrainFeaturesPipeline] Storing pipeline results to MongoDB collection: ${mongoCollection}`);
     await storeFeaturesToMongo(mongoDb, mongoCollection, features, evaluations, pcaModelJson, categoryId, texts);
-    console.log(`[FeaturePipeline] Storage to MongoDB complete.`);
+    console.log(`[TrainFeaturesPipeline] Storage to MongoDB complete.`);
   }
 
-  console.log(`[FeaturePipeline] Pipeline completed successfully.`);
+  console.log(`[TrainFeaturesPipeline] Pipeline completed successfully.`);
   return { features, evaluations, points, reducedPoints, pcaModelJson };
 }
 
