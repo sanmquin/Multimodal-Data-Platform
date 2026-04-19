@@ -252,7 +252,7 @@ const Playground = () => {
         body: JSON.stringify(body)
       });
 
-      if ((endpoint === 'cluster-background' || endpoint === 'refine-clusters' || endpoint === 'train-features') || endpoint === 'assign-clusters') && response.status === 202) {
+      if ((endpoint === 'cluster-background' || endpoint === 'refine-clusters' || endpoint === 'train-features' || endpoint === 'assign-clusters') && response.status === 202) {
         setResult('Accepted for background processing. Check Netlify logs.');
       } else {
         const data = await response.json();
