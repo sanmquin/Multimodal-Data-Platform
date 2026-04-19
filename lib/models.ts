@@ -51,15 +51,20 @@ export function getEmbeddingModels(mongoCollection: string) {
 
 export function getFeatureModels(mongoCollection: string) {
   const pcaSchema = new mongoose.Schema({
-    categoryId: { type: String, required: true },
+    categoryId: { type: String, required: false },
+    clusterId: { type: String, required: false },
+    version: { type: Number, default: 1 },
     modelBuffer: Buffer,
     createdAt: { type: Date, default: Date.now }
   });
 
   const featureSchema = new mongoose.Schema({
-    categoryId: { type: String, required: true },
+    categoryId: { type: String, required: false },
+    clusterId: { type: String, required: false },
+    version: { type: Number, default: 1 },
     name: String,
     description: String,
+    isClustered: { type: Boolean, default: false },
     modelBuffer: Buffer,
     error: Number,
     averageValue: Number,
@@ -67,7 +72,9 @@ export function getFeatureModels(mongoCollection: string) {
   });
 
   const evaluationSchema = new mongoose.Schema({
-    categoryId: { type: String, required: true },
+    categoryId: { type: String, required: false },
+    clusterId: { type: String, required: false },
+    version: { type: Number, default: 1 },
     textId: String,
     text: String,
     evaluations: [{
@@ -79,7 +86,9 @@ export function getFeatureModels(mongoCollection: string) {
   });
 
   const performanceSchema = new mongoose.Schema({
-    categoryId: { type: String, required: true },
+    categoryId: { type: String, required: false },
+    clusterId: { type: String, required: false },
+    version: { type: Number, default: 1 },
     featureName: String,
     correlation: Number,
     createdAt: { type: Date, default: Date.now }

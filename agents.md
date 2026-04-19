@@ -397,10 +397,12 @@ Query tip: always `sort({ version: -1 })` on clusters to get the latest taxonomy
 
 | Collection | Schema Fields |
 |---|---|
-| `[prefix]_pca` | `categoryId` (required), `modelBuffer` (Buffer), `createdAt` |
-| `[prefix]_features` | `categoryId` (required), `name`, `description`, `modelBuffer` (Buffer – serialized MLR model), `error` (Number – MSE), `averageValue` (Number), `createdAt` |
-| `[prefix]_evaluations` | `categoryId` (required), `textId`, `text`, `evaluations` ([{ featureName, score, inferenceValue }]), `createdAt` |
-| `[prefix]_performance` | `categoryId` (required), `featureName`, `correlation` (Number), `createdAt` |
+| `[prefix]_pca` | `categoryId` (required), `version` (default 1), `modelBuffer` (Buffer), `createdAt` |
+| `[prefix]_features` | `categoryId` (required), `version` (default 1), `name`, `description`, `modelBuffer` (Buffer – serialized MLR model), `error` (Number – MSE), `averageValue` (Number), `createdAt` |
+| `[prefix]_evaluations` | `categoryId` (required), `version` (default 1), `textId`, `text`, `evaluations` ([{ featureName, score, inferenceValue }]), `createdAt` |
+| `[prefix]_performance` | `categoryId` (required), `version` (default 1), `featureName`, `correlation` (Number), `createdAt` |
+
+Query tip: always `sort({ version: -1 })` on clusters and features schemas (e.g., `[prefix]_features`, `[prefix]_pca`, `[prefix]_evaluations`) to get the latest models and taxonomies.
 
 ### Prompt Logging Collection (created by `gemmaGenerate` / `geminiGenerateJson`)
 

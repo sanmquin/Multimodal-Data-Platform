@@ -26,11 +26,12 @@ async function logPrompt(category: string, model: string, prompt: string, result
     if (await connectMongoose('mm-dp')) {
       const { PromptModel } = getPromptModels('prompts');
       await PromptModel.create({ category, model, prompt, result, elapsedTime });
+      console.log(`[logPrompt] Successfully saved gemma prompt (category: ${category}, model: ${model}) to mm-dp database.`);
     } else {
-      console.error('Failed to connect to Mongo database: mm-dp');
+      console.error('[logPrompt] Failed to connect to Mongo database: mm-dp. Prompt was not logged.');
     }
   } catch (err) {
-    console.error('Failed to log gemma prompt to Mongo:', err);
+    console.error('[logPrompt] Failed to log gemma prompt to Mongo. Error details:', err);
   }
 }
 

@@ -15,15 +15,39 @@ The endpoint handles the text payload, interacts with the LLM to extract common 
   "texts": [
     { "id": "1", "text": "Learning machine learning algorithms requires strong mathematical foundations." },
     { "id": "2", "text": "The new cloud infrastructure scales automatically based on traffic." }
-  ]
+  ],
+  "mongoDb": "{{MONGO_DB}}",
+  "mongoCollection": "{{MONGO_COLLECTION}}",
+  "categoryId": "{{CATEGORY_ID}}"
 }
 ```
 
 - **texts**: Array of objects containing text records to analyze.
+- **mongoDb** *(Optional)*: The name of the MongoDB database where features should be saved.
+- **mongoCollection** *(Optional)*: The prefix for the MongoDB collections to save into.
+- **categoryId** *(Optional)*: Identifier to associate generated features with a specific text batch.
+- **clusterId** *(Optional)*: Identifier to associate generated features with a specific cluster.
 
 ### Environment Setup
 
 The function depends on the `GEMINI_API_KEY` environment variable for generating the textual features.
+
+### Querying Results
+
+If you provide the `mongoDb` and `mongoCollection` parameters in your payload, the results of the feature generation operations will be persisted to MongoDB.
+
+Data is stored in the following collection based on the `mongoCollection` prefix you provide:
+
+1.  **`[prefix]_features`**: Stores the descriptive features generated from the text snippets.
+    *   `categoryId` (String): The associated category identifier.
+    *   `clusterId` (String): The associated cluster identifier.
+    *   `version` (Number): The version of the feature generation run. Defaults to 1 and increments per run.
+    *   `name` (String): The generated name of the feature.
+    *   `description` (String): A detailed description of the feature.
+    *   `isClustered` (Boolean): Always false for the raw features described in this endpoint.
+    *   `createdAt` (Date): The time the feature was created.
+
+When querying the collection directly, you should sort the items by `version` descending (`sort({ version: -1 })`) to get the latest generated features.
 
 ### Response
 
@@ -64,7 +88,10 @@ Please write code to integrate the multimodal data platform describe features AP
 {
   "texts": [
     { "id": "string", "text": "string" }
-  ]
+  ],
+  "mongoDb": "{{MONGO_DB}}",
+  "mongoCollection": "{{MONGO_COLLECTION}}",
+  "categoryId": "{{CATEGORY_ID}}"
 }
 ```
 
@@ -72,6 +99,10 @@ Please write code to integrate the multimodal data platform describe features AP
 *   `texts` (**Required**): Array of objects containing text records to analyze.
     *   `id` (*Optional* for this endpoint): Identifier.
     *   `text` (**Required**): Text content to extract features from.
+*   `mongoDb` (*Optional*): The name of the MongoDB database where the output data should be saved.
+*   `mongoCollection` (*Optional*): The prefix for the MongoDB collections to save into (e.g. `[prefix]_features`). Required if `mongoDb` is specified.
+*   `categoryId` (*Optional*): Identifier to associate generated features with a specific text batch.
+*   `clusterId` (*Optional*): Identifier to associate generated features with a specific cluster.
 
 #### Response
 

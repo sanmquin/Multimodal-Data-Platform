@@ -31,7 +31,9 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[describe-features function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts } = parsedBody;
+    const { texts, categoryId, clusterId } = parsedBody;
+    const mongoDb = parsedBody.mongoDb?.toLowerCase();
+    const mongoCollection = parsedBody.mongoCollection;
 
     if (!texts || !Array.isArray(texts)) {
       console.warn(`[describe-features function] Validation failed: texts array is required.`);
@@ -44,7 +46,7 @@ export const handler: Handler = async (event) => {
 
     console.log(`[describe-features function] Processing ${texts.length} texts synchronously...`);
     const rawTexts = texts.map((t: any) => t.text || t);
-    const features = await describeFeatures(rawTexts);
+    const features = await describeFeatures(rawTexts, mongoDb, mongoCollection, categoryId, clusterId);
     console.log(`[describe-features function] Completed describing ${features.length} features.`);
 
     return {

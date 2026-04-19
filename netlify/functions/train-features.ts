@@ -30,7 +30,7 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[train-features function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts, features, categoryId } = parsedBody;
+    const { texts, features, categoryId, clusterId } = parsedBody;
 
     if (!texts || !Array.isArray(texts)) {
       console.warn(`[train-features function] Validation failed: texts array is required.`);
@@ -50,16 +50,16 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    if (!categoryId) {
-      console.warn(`[train-features function] Validation failed: categoryId is required.`);
+    if (!categoryId && !clusterId) {
+      console.warn(`[train-features function] Validation failed: categoryId or clusterId is required.`);
       return {
         statusCode: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'categoryId is required' })
+        body: JSON.stringify({ error: 'categoryId or clusterId is required' })
       };
     }
 
-    console.log(`[train-features function] Category Id: ${categoryId}`);
+    console.log(`[train-features function] Category/Cluster Id: ${categoryId || clusterId}`);
 
     console.log(`[train-features function] Validation passed. Delegating ${texts.length} texts and ${features.length} features to background function...`);
 
