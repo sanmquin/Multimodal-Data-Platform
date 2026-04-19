@@ -237,10 +237,13 @@ const Playground = () => {
         body.categoryId = "test-category";
       }
 
-      if (endpoint === 'assign-clusters' || endpoint === 'aggregate-features') {
+      if (endpoint === 'assign-clusters' || endpoint === 'aggregate-features' || endpoint === 'describe-features') {
         // Need to pass mongo details from text or hardcode for test
         body.mongoDb = parsedInput.mongoDb || localStorage.getItem('MONGO_DB');
         body.mongoCollection = parsedInput.mongoCollection || localStorage.getItem('MONGO_COLLECTION');
+      }
+      if (endpoint === 'describe-features') {
+        body.categoryId = parsedInput.categoryId || localStorage.getItem('CATEGORY_ID');
       }
       if (endpoint === 'assign-clusters') {
         // Need to pass mongo details from text or hardcode for test
