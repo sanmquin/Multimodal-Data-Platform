@@ -219,7 +219,7 @@ const Playground = () => {
   const [numClusters, setNumClusters] = useState('2');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
-  const [endpoint, setEndpoint] = useState<'embed' | 'cluster-background' | 'refine-clusters'>('embed');
+  const [endpoint, setEndpoint] = useState<'embed' | 'cluster-background' | 'refine-clusters' | 'assign-clusters'>('embed');
 
   const handleTest = async () => {
     setLoading(true);
@@ -232,13 +232,22 @@ const Playground = () => {
         body.numClusters = parseInt(numClusters, 10);
       }
 
+      if (endpoint === 'assign-clusters') {
+        // Need to pass mongo details from text or hardcode for test
+        body.mongoDb = parsedInput.mongoDb || localStorage.getItem('MONGO_DB');
+        body.mongoCollection = parsedInput.mongoCollection || localStorage.getItem('MONGO_COLLECTION');
+        if (parsedInput.text) {
+           body.texts = [{id: parsedInput.id || "1", text: parsedInput.text}];
+        }
+      }
+
       const response = await fetch(`/.netlify/functions/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
 
-      if ((endpoint === 'cluster-background' || endpoint === 'refine-clusters') && response.status === 202) {
+      if ((endpoint === 'cluster-background' || endpoint === 'refine-clusters' || endpoint === 'assign-clusters') && response.status === 202) {
         setResult('Accepted for background processing. Check Netlify logs.');
       } else {
         const data = await response.json();
@@ -262,6 +271,7 @@ const Playground = () => {
               <option value="embed">Embed (POST /.netlify/functions/embed)</option>
               <option value="cluster-background">Cluster Background (POST /.netlify/functions/cluster-background)</option>
               <option value="refine-clusters">Refine Clusters (POST /.netlify/functions/refine-clusters)</option>
+              <option value="assign-clusters">Assign Clusters (POST /.netlify/functions/assign-clusters)</option>
             </select>
           </div>
         </div>
