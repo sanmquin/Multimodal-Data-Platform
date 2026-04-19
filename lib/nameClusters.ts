@@ -5,7 +5,8 @@ import { getPrompt } from './prompts';
 async function generateClusterNameAndDesc(
   clusterTexts: string[],
   previousClusters: string[] = [],
-  context: string = ""
+  context: string = "",
+  mongoDb?: string
 ): Promise<{ name: string, description: string, summary: string }> {
   const promptContext = context ? `${context}\n\n` : "";
   let avoidDuplicationInstructions = "";
@@ -22,7 +23,8 @@ async function generateClusterNameAndDesc(
   try {
     const response = await gemmaGenerate(prompt, {
       systemInstruction: "You are an expert at categorizing text. Always output raw, valid JSON.",
-      promptCategory: 'nameClusters'
+      promptCategory: 'nameClusters',
+      mongoDb
     });
 
     let text = response.text.trim();
@@ -50,17 +52,17 @@ async function generateClusterNameAndDesc(
  */
 export async function nameClusters<T extends ClusterWithTexts>(
   clusters: T[],
-  options: { cumulative?: boolean, context?: string } = {}
+  options: { cumulative?: boolean, context?: string, mongoDb?: string } = {}
 ): Promise<(T & NamedCluster)[]> {
   // Sort clusters from largest number of elements to smallest
   const sortedClusters = [...clusters].sort((a, b) => b.texts.length - a.texts.length);
 
   const namedClusters: (T & NamedCluster)[] = [];
   const previousClusters: string[] = [];
-  const { cumulative = false, context = "" } = options;
+  const { cumulative = false, context = "", mongoDb } = options;
 
   for (const cluster of sortedClusters) {
-    const generated = await generateClusterNameAndDesc(cluster.texts, previousClusters, context);
+    const generated = await generateClusterNameAndDesc(cluster.texts, previousClusters, context, mongoDb);
 
     if (cumulative) {
       previousClusters.push(`Name: ${generated.name}\nSummary: ${generated.summary}`);

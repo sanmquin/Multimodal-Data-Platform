@@ -52,7 +52,7 @@ export async function trainFeaturesPipeline(
   const rawTexts = texts.map((t) => t.text);
 
   console.log(`[TrainFeaturesPipeline] Evaluating features for all texts...`);
-  const evaluations = await evaluateFeatures(rawTexts, features);
+  const evaluations = await evaluateFeatures(rawTexts, features, { mongoDb });
   console.log(`[TrainFeaturesPipeline] Feature evaluation complete.`);
 
   console.log(`[TrainFeaturesPipeline] Generating embeddings and optionally reducing dimensions...`);

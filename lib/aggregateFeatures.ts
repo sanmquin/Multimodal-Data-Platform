@@ -39,7 +39,7 @@ async function fetchInputFeatures(FeatureModel: any, categoryIds: string[]): Pro
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function generateAggregatedFeatures(clusterData: any, featuresData: Feature[]): Promise<Feature[]> {
+async function generateAggregatedFeatures(clusterData: any, featuresData: Feature[], mongoDb: string): Promise<Feature[]> {
   let prompt = getPrompt('aggregateFeatures') || '';
   prompt = prompt.replace('{{clusterData}}', `Name: ${clusterData.name}\nDescription: ${clusterData.description}`);
   prompt = prompt.replace('{{featuresData}}', JSON.stringify(featuresData, null, 2));
@@ -63,7 +63,8 @@ async function generateAggregatedFeatures(clusterData: any, featuresData: Featur
   try {
     const response = await geminiGenerateJson(prompt, schema, {
       systemInstruction: "You are an expert taxonomist and feature extraction AI. Always output valid JSON.",
-      promptCategory: 'aggregateFeatures'
+      promptCategory: 'aggregateFeatures',
+      mongoDb
     });
 
     return response as Feature[];
@@ -97,5 +98,5 @@ export async function aggregateFeatures(options: AggregateFeaturesOptions): Prom
     summary: targetCluster.summary
   };
 
-  return generateAggregatedFeatures(clusterData, featuresData);
+  return generateAggregatedFeatures(clusterData, featuresData, mongoDb);
 }
