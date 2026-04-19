@@ -36,8 +36,8 @@ export async function assignClusters(options: AssignClustersOptions): Promise<vo
   console.log(`[assignClusters] Fetching latest cluster version...`);
   const latestCluster = await ClusterModel.findOne().sort({ version: -1 });
   if (!latestCluster) {
-    console.error(`[assignClusters] No clusters found in collection: ${mongoCollection}`);
-    throw new Error("No clusters found.");
+    console.error(`[assignClusters] No clusters found in collection: ${mongoCollection}_clusters`);
+    throw new Error(`No clusters found in the '${mongoCollection}_clusters' collection. You must run the clustering pipeline on this collection before assigning new items.`);
   }
   const currentVersion = latestCluster.version || 1;
   console.log(`[assignClusters] Latest cluster version is ${currentVersion}.`);
@@ -46,8 +46,8 @@ export async function assignClusters(options: AssignClustersOptions): Promise<vo
   const currentClusters = await ClusterModel.find({ version: currentVersion }).lean();
 
   if (currentClusters.length === 0) {
-      console.error(`[assignClusters] No clusters found for version ${currentVersion}.`);
-      throw new Error("No clusters found for the current version.");
+      console.error(`[assignClusters] No clusters found for version ${currentVersion} in collection: ${mongoCollection}_clusters.`);
+      throw new Error(`No clusters found for version ${currentVersion} in the '${mongoCollection}_clusters' collection. You must run the clustering pipeline on this collection before assigning new items.`);
   }
   console.log(`[assignClusters] Found ${currentClusters.length} clusters for version ${currentVersion}.`);
 
