@@ -219,7 +219,7 @@ const Playground = () => {
   const [numClusters, setNumClusters] = useState('2');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
-  const [endpoint, setEndpoint] = useState<'embed' | 'cluster-background' | 'refine-clusters' | 'describe-features' | 'train-features'>('embed');
+  const [endpoint, setEndpoint] = useState<'embed' | 'cluster-background' | 'refine-clusters' | 'describe-features' | 'train-features' | 'assign-clusters'>('embed');
 
   const handleTest = async () => {
     setLoading(true);
@@ -237,13 +237,22 @@ const Playground = () => {
         body.categoryId = "test-category";
       }
 
+      if (endpoint === 'assign-clusters') {
+        // Need to pass mongo details from text or hardcode for test
+        body.mongoDb = parsedInput.mongoDb || localStorage.getItem('MONGO_DB');
+        body.mongoCollection = parsedInput.mongoCollection || localStorage.getItem('MONGO_COLLECTION');
+        if (parsedInput.text) {
+           body.texts = [{id: parsedInput.id || "1", text: parsedInput.text}];
+        }
+      }
+
       const response = await fetch(`/.netlify/functions/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
 
-      if ((endpoint === 'cluster-background' || endpoint === 'refine-clusters' || endpoint === 'train-features') && response.status === 202) {
+      if ((endpoint === 'cluster-background' || endpoint === 'refine-clusters' || endpoint === 'train-features') || endpoint === 'assign-clusters') && response.status === 202) {
         setResult('Accepted for background processing. Check Netlify logs.');
       } else {
         const data = await response.json();
@@ -269,6 +278,7 @@ const Playground = () => {
               <option value="refine-clusters">Refine Clusters (POST /.netlify/functions/refine-clusters)</option>
               <option value="describe-features">Describe Features (POST /.netlify/functions/describe-features)</option>
               <option value="train-features">Train Features (POST /.netlify/functions/train-features)</option>
+              <option value="assign-clusters">Assign Clusters (POST /.netlify/functions/assign-clusters)</option>
             </select>
           </div>
         </div>
