@@ -42,6 +42,8 @@ export async function assignClusters(options: AssignClustersOptions): Promise<vo
     description: c.description
   }));
 
+  console.log("Assign cluster descriptions:", JSON.stringify(clustersInfo, null, 2));
+
   // Create a mapping from lowercased name to cluster ID for fast lookup
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clusterMap: Record<string, string> = {};
