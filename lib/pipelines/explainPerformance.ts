@@ -12,7 +12,8 @@ export interface PerformanceTextRecord extends TextRecord {
 export interface ExplainPerformanceOptions {
   mongoDb: string;
   mongoCollection: string;
-  categoryId: string;
+  categoryId?: string;
+  clusterId?: string;
   featureName: string;
   texts: PerformanceTextRecord[];
   embedder?: (texts: string[]) => Promise<number[][]>;
@@ -31,7 +32,7 @@ export interface ExplainPerformanceResult {
 }
 
 export async function explainPerformance(options: ExplainPerformanceOptions): Promise<ExplainPerformanceResult> {
-  const { mongoDb, mongoCollection, categoryId, featureName, texts, embedder, pc, model, reduceDimensions, indexName, namespace, cloud, region } = options;
+  const { mongoDb, mongoCollection, categoryId, clusterId, featureName, texts, embedder, pc, model, reduceDimensions, indexName, namespace, cloud, region } = options;
 
   if (!texts || texts.length === 0) {
     return { correlation: 0, evaluations: [] };
@@ -42,6 +43,7 @@ export async function explainPerformance(options: ExplainPerformanceOptions): Pr
     mongoDb,
     mongoCollection,
     categoryId,
+    clusterId,
     texts, // implicitly maps to TextRecord
     embedder,
     pc,
@@ -81,10 +83,11 @@ export async function explainPerformance(options: ExplainPerformanceOptions): Pr
   if (await connectMongoose(mongoDb)) {
     const { PerformanceModel, FeatureModel } = getFeatureModels(mongoCollection);
 
-    const latestFeature = await FeatureModel.findOne({ categoryId }).sort({ version: -1 });
+    const query = categoryId ? { categoryId } : clusterId ? { clusterId } : {};
+    const latestFeature = await FeatureModel.findOne(query).sort({ version: -1 });
     const currentVersion = latestFeature ? latestFeature.version || 1 : 1;
 
-    await PerformanceModel.create({ categoryId, version: currentVersion, featureName, correlation });
+    await PerformanceModel.create({ categoryId, clusterId, version: currentVersion, featureName, correlation });
   }
 
   return { correlation, evaluations };
