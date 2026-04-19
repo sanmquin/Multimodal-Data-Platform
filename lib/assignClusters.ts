@@ -16,25 +16,40 @@ export interface AssignClustersOptions {
 
 export async function assignClusters(options: AssignClustersOptions): Promise<void> {
   const { mongoDb, mongoCollection, texts } = options;
+  console.log(`[assignClusters] Starting assignment process for collection: ${mongoCollection}`);
 
-  if (!texts || texts.length === 0) return;
+  if (!texts || texts.length === 0) {
+    console.log(`[assignClusters] No texts provided. Exiting.`);
+    return;
+  }
 
+  console.log(`[assignClusters] Connecting to MongoDB: ${mongoDb}...`);
   const isConnected = await connectMongoose(mongoDb);
-  if (!isConnected) throw new Error("Failed to connect to MongoDB");
+  if (!isConnected) {
+    console.error(`[assignClusters] MongoDB connection failed.`);
+    throw new Error("Failed to connect to MongoDB");
+  }
+  console.log(`[assignClusters] Connected to MongoDB successfully.`);
 
   const { ClusterModel, ItemModel } = getMongooseModels(mongoCollection);
 
+  console.log(`[assignClusters] Fetching latest cluster version...`);
   const latestCluster = await ClusterModel.findOne().sort({ version: -1 });
   if (!latestCluster) {
+    console.error(`[assignClusters] No clusters found in collection: ${mongoCollection}`);
     throw new Error("No clusters found.");
   }
   const currentVersion = latestCluster.version || 1;
+  console.log(`[assignClusters] Latest cluster version is ${currentVersion}.`);
 
+  console.log(`[assignClusters] Fetching all clusters for version ${currentVersion}...`);
   const currentClusters = await ClusterModel.find({ version: currentVersion }).lean();
 
   if (currentClusters.length === 0) {
+      console.error(`[assignClusters] No clusters found for version ${currentVersion}.`);
       throw new Error("No clusters found for the current version.");
   }
+  console.log(`[assignClusters] Found ${currentClusters.length} clusters for version ${currentVersion}.`);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clustersInfo = currentClusters.map((c: any) => ({
@@ -42,7 +57,7 @@ export async function assignClusters(options: AssignClustersOptions): Promise<vo
     description: c.description
   }));
 
-  console.log("Assign cluster descriptions:");
+  console.log(`[assignClusters] Extracted cluster descriptions for assignment mapping.`);
 
   // Create a mapping from lowercased name to cluster ID for fast lookup
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,7 +69,8 @@ export async function assignClusters(options: AssignClustersOptions): Promise<vo
   const basePrompt = getPrompt('assignClusters') || '';
   const batchSize = 10;
 
-  const processBatch = async (batchTexts: TextItem[]) => {
+  const processBatch = async (batchTexts: TextItem[], pass: number = 1) => {
+      console.log(`[assignClusters] [Pass ${pass}] Processing batch of ${batchTexts.length} texts...`);
       let prompt = basePrompt.replace('{{clusters}}', JSON.stringify(clustersInfo, null, 2));
       prompt = prompt.replace('{{texts}}', JSON.stringify(batchTexts, null, 2));
 
@@ -70,9 +86,10 @@ export async function assignClusters(options: AssignClustersOptions): Promise<vo
           if (text.endsWith('```')) text = text.slice(0, -3);
 
           const assignments = JSON.parse(text.trim());
+          console.log(`[assignClusters] [Pass ${pass}] Batch completed. Returned ${assignments.length} assignments.`);
           return assignments;
       } catch (e) {
-          console.error("Error processing batch", e);
+          console.error(`[assignClusters] [Pass ${pass}] Error processing batch:`, e);
           return null;
       }
   };
@@ -80,9 +97,10 @@ export async function assignClusters(options: AssignClustersOptions): Promise<vo
   const toSave = [];
   let unassignedTexts: TextItem[] = [];
 
+  console.log(`[assignClusters] Starting Pass 1 for ${texts.length} texts across multiple batches...`);
   for (let i = 0; i < texts.length; i += batchSize) {
     const batchTexts = texts.slice(i, i + batchSize);
-    const assignments = await processBatch(batchTexts);
+    const assignments = await processBatch(batchTexts, 1);
 
     if (assignments && Array.isArray(assignments)) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -110,10 +128,10 @@ export async function assignClusters(options: AssignClustersOptions): Promise<vo
 
   // Second pass for unassigned texts
   if (unassignedTexts.length > 0) {
-      console.log(`[assignClusters] Second pass for ${unassignedTexts.length} unassigned texts...`);
+      console.log(`[assignClusters] Starting Pass 2 for ${unassignedTexts.length} unassigned texts...`);
       for (let i = 0; i < unassignedTexts.length; i += batchSize) {
           const batchTexts = unassignedTexts.slice(i, i + batchSize);
-          const assignments = await processBatch(batchTexts);
+          const assignments = await processBatch(batchTexts, 2);
 
           if (assignments && Array.isArray(assignments)) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -128,6 +146,10 @@ export async function assignClusters(options: AssignClustersOptions): Promise<vo
   }
 
   if (toSave.length > 0) {
+      console.log(`[assignClusters] Saving ${toSave.length} total assignments to MongoDB...`);
       await ItemModel.insertMany(toSave);
+      console.log(`[assignClusters] Assignments saved successfully.`);
+  } else {
+      console.log(`[assignClusters] No successful assignments generated to save.`);
   }
 }
