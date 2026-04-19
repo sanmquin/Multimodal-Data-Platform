@@ -8,7 +8,8 @@ export interface AggregateFeaturesOptions {
   categoryIds: string[];
   clusterId: string;
   mongoDb: string;
-  mongoCollection: string;
+  clustersMongoCollection: string;
+  featuresMongoCollection: string;
 }
 
 /**
@@ -75,7 +76,7 @@ async function generateAggregatedFeatures(clusterData: any, featuresData: Featur
 }
 
 export async function aggregateFeatures(options: AggregateFeaturesOptions): Promise<Feature[]> {
-  const { categoryIds, clusterId, mongoDb, mongoCollection } = options;
+  const { categoryIds, clusterId, mongoDb, clustersMongoCollection, featuresMongoCollection } = options;
 
   if (!categoryIds || categoryIds.length === 0) throw new Error('categoryIds array cannot be empty');
   if (!clusterId) throw new Error('clusterId cannot be empty');
@@ -83,8 +84,8 @@ export async function aggregateFeatures(options: AggregateFeaturesOptions): Prom
   const isConnected = await connectMongoose(mongoDb);
   if (!isConnected) throw new Error('Failed to connect to MongoDB');
 
-  const { ClusterModel } = getMongooseModels(mongoCollection);
-  const { FeatureModel } = getFeatureModels(mongoCollection);
+  const { ClusterModel } = getMongooseModels(clustersMongoCollection);
+  const { FeatureModel } = getFeatureModels(featuresMongoCollection);
 
   const targetCluster = await ClusterModel.findById(clusterId).lean();
   if (!targetCluster) throw new Error(`Cluster not found for id: ${clusterId}`);

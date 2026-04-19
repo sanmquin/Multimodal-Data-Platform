@@ -15,14 +15,18 @@ The endpoint takes multiple `categoryIds`, queries their features from MongoDB, 
   "categoryIds": ["category-1", "category-2"],
   "clusterId": "649c25f4b4b2c12a74",
   "mongoDb": "{{MONGO_DB}}",
-  "mongoCollection": "{{MONGO_COLLECTION}}"
+  "clustersMongoCollection": "{{CLUSTERS_MONGO_COLLECTION}}",
+  "featuresMongoCollection": "{{FEATURES_MONGO_COLLECTION}}"
 }
 ```
 
 - **categoryIds**: Array of strings representing category identifiers.
 - **clusterId**: The ObjectId (as string) of the target cluster.
 - **mongoDb**: The name of your MongoDB database (will be converted to lowercase).
-- **mongoCollection**: The prefix for your MongoDB collections.
+- **clustersMongoCollection**: The prefix for your MongoDB collections containing the clusters.
+- **featuresMongoCollection**: The prefix for your MongoDB collections containing the features.
+
+*Note: You can use `mongoCollection` as a shorthand if both prefixes are the same.*
 
 ### Environment Setup
 
