@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 export const handler: Handler = async (event) => {
-  console.log(`[features function] Received ${event.httpMethod} request`);
+  console.log(`[train-features function] Received ${event.httpMethod} request`);
 
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -18,7 +18,7 @@ export const handler: Handler = async (event) => {
   }
 
   if (event.httpMethod !== 'POST') {
-    console.warn(`[features function] Invalid method: ${event.httpMethod}`);
+    console.warn(`[train-features function] Invalid method: ${event.httpMethod}`);
     return {
       statusCode: 405,
       headers: corsHeaders,
@@ -28,12 +28,12 @@ export const handler: Handler = async (event) => {
 
   try {
     const bodyText = event.body || '{}';
-    console.log(`[features function] Parsing request body... length: ${bodyText.length} characters`);
+    console.log(`[train-features function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts, categoryId } = parsedBody;
+    const { texts, features, categoryId } = parsedBody;
 
     if (!texts || !Array.isArray(texts)) {
-      console.warn(`[features function] Validation failed: texts array is required.`);
+      console.warn(`[train-features function] Validation failed: texts array is required.`);
       return {
         statusCode: 400,
         headers: corsHeaders,
@@ -41,8 +41,17 @@ export const handler: Handler = async (event) => {
       };
     }
 
+    if (!features || !Array.isArray(features)) {
+      console.warn(`[train-features function] Validation failed: features array is required.`);
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'features array is required' })
+      };
+    }
+
     if (!categoryId) {
-      console.warn(`[features function] Validation failed: categoryId is required.`);
+      console.warn(`[train-features function] Validation failed: categoryId is required.`);
       return {
         statusCode: 400,
         headers: corsHeaders,
@@ -50,16 +59,16 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    console.log(`[features function] Category Id: ${categoryId}`);
+    console.log(`[train-features function] Category Id: ${categoryId}`);
 
-    console.log(`[features function] Validation passed. Delegating ${texts.length} texts to background function...`);
+    console.log(`[train-features function] Validation passed. Delegating ${texts.length} texts and ${features.length} features to background function...`);
 
     // Determine the host for triggering the background function
     const host = event.headers.host;
     const protocol = host?.includes('localhost') ? 'http' : 'https';
-    const backgroundUrl = `${protocol}://${host}/.netlify/functions/features-background`;
+    const backgroundUrl = `${protocol}://${host}/.netlify/functions/train-features-background`;
 
-    console.log(`[features function] Triggering background function at: ${backgroundUrl}`);
+    console.log(`[train-features function] Triggering background function at: ${backgroundUrl}`);
 
     // Trigger the background function asynchronously. We must await the request being sent successfully
     // before returning 202, otherwise the serverless function execution container could freeze and kill the request.
@@ -71,9 +80,9 @@ export const handler: Handler = async (event) => {
         },
         body: bodyText
       });
-      console.log(`[features function] Background function triggered successfully. Returning 202 Accepted.`);
+      console.log(`[train-features function] Background function triggered successfully. Returning 202 Accepted.`);
     } catch (err) {
-      console.error(`[features function] Error triggering background function:`, err);
+      console.error(`[train-features function] Error triggering background function:`, err);
       return {
         statusCode: 500,
         headers: corsHeaders,
@@ -84,12 +93,12 @@ export const handler: Handler = async (event) => {
     return {
       statusCode: 202,
       headers: corsHeaders,
-      body: JSON.stringify({ message: 'Accepted. Features job has been triggered in the background.' })
+      body: JSON.stringify({ message: 'Accepted. Train Features job has been triggered in the background.' })
     };
 
   } catch (error: unknown) {
     const err = error as Error;
-    console.error(`[features function] Uncaught error during validation:`, error);
+    console.error(`[train-features function] Uncaught error during validation:`, error);
     return {
       statusCode: 500,
       headers: corsHeaders,
