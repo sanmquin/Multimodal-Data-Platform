@@ -7,6 +7,7 @@ export interface GemmaOptions {
   model?: string;
   systemInstruction?: string;
   promptCategory?: string;
+  mongoDb?: string;
 }
 
 export interface GemmaResponse {
@@ -21,14 +22,15 @@ export interface GemmaResponse {
  * @returns A promise that resolves to the generated text response.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function logPrompt(category: string, model: string, prompt: string, result: any, elapsedTime: number) {
+async function logPrompt(category: string, model: string, prompt: string, result: any, elapsedTime: number, mongoDb?: string) {
+  if (!mongoDb) return;
   try {
-    if (await connectMongoose('mm-dp')) {
+    if (await connectMongoose(mongoDb)) {
       const { PromptModel } = getPromptModels('prompts');
       await PromptModel.create({ category, model, prompt, result, elapsedTime });
-      console.log(`[logPrompt] Successfully saved gemma prompt (category: ${category}, model: ${model}) to mm-dp database.`);
+      console.log(`[logPrompt] Successfully saved gemma prompt (category: ${category}, model: ${model}) to ${mongoDb} database.`);
     } else {
-      console.error('[logPrompt] Failed to connect to Mongo database: mm-dp. Prompt was not logged.');
+      console.error(`[logPrompt] Failed to connect to Mongo database: ${mongoDb}. Prompt was not logged.`);
     }
   } catch (err) {
     console.error('[logPrompt] Failed to log gemma prompt to Mongo. Error details:', err);
@@ -44,6 +46,7 @@ export async function gemmaGenerate(
     model = 'gemma-4-26b-a4b-it',
     systemInstruction,
     promptCategory = 'default',
+    mongoDb,
   } = options;
 
   if (!apiKey) {
@@ -74,7 +77,7 @@ export async function gemmaGenerate(
     // Ignore and keep as string
   }
 
-  logPrompt(promptCategory, model, prompt, resultToStore, elapsedTime);
+  logPrompt(promptCategory, model, prompt, resultToStore, elapsedTime, mongoDb);
 
   return {
     text,

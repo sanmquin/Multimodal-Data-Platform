@@ -27,7 +27,8 @@ export async function describeFeatures(
   try {
     const response = await gemmaGenerate(prompt, {
       systemInstruction: "You are an expert feature extraction AI. Always output raw, valid JSON. Only return a JSON array.",
-      promptCategory: 'describeFeatures'
+      promptCategory: 'describeFeatures',
+      mongoDb
     });
 
     let text = response.text.trim();

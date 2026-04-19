@@ -77,7 +77,8 @@ export async function assignClusters(options: AssignClustersOptions): Promise<vo
       try {
           const response = await gemmaGenerate(prompt, {
             systemInstruction: "You are an expert taxonomist. Always output raw, valid JSON. Only return a JSON array.",
-            promptCategory: 'assignClusters'
+            promptCategory: 'assignClusters',
+            mongoDb
           });
 
           let text = response.text.trim();
