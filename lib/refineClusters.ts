@@ -85,7 +85,7 @@ async function fetchClusterData<T extends RecordMetadata>(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function generateRefinedClusters(clustersData: any[]) {
+async function generateRefinedClusters(clustersData: any[], mongoDb: string) {
   let prompt = getPrompt('refineClusters') || '';
   prompt = prompt.replace('{{clustersData}}', JSON.stringify(clustersData, null, 2));
 
@@ -110,7 +110,8 @@ async function generateRefinedClusters(clustersData: any[]) {
   const response = await geminiGenerateJson(prompt, schema, {
     model: 'gemini-3-flash-preview',
     systemInstruction: "You are an expert at categorizing data.",
-    promptCategory: 'refineClusters'
+    promptCategory: 'refineClusters',
+    mongoDb
   });
 
   return response;
@@ -130,7 +131,7 @@ export async function refineClusters<T extends RecordMetadata = RecordMetadata>(
 
   if (clustersData.length === 0) return [];
 
-  const refinedClustersData = await generateRefinedClusters(clustersData);
+  const refinedClustersData = await generateRefinedClusters(clustersData, mongoDb);
 
   const newVersion = currentVersion + 1;
   const savedClusters = [];

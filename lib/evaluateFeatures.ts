@@ -7,11 +7,13 @@ import { getPrompt } from './prompts';
  *
  * @param texts - The list of texts to evaluate.
  * @param features - The list of features to evaluate against.
+ * @param options - Options including optional mongoDb.
  * @returns A promise resolving to a list of text feature evaluations.
  */
 export async function evaluateFeatures(
   texts: string[],
-  features: Feature[]
+  features: Feature[],
+  options: { mongoDb?: string } = {}
 ): Promise<TextFeatureEvaluation[]> {
   const basePrompt = getPrompt('evaluateFeatures') || '';
   const batchSize = 10;
@@ -27,7 +29,8 @@ export async function evaluateFeatures(
     try {
       const response = await gemmaGenerate(prompt, {
         systemInstruction: "You are an expert feature evaluation AI. Always output raw, valid JSON. Only return a JSON array.",
-        promptCategory: 'evaluateFeatures'
+        promptCategory: 'evaluateFeatures',
+        mongoDb: options.mongoDb
       });
 
       let text = response.text.trim();

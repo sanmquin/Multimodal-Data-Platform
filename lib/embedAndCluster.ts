@@ -49,7 +49,7 @@ export async function embedAndCluster<T extends RecordMetadata = RecordMetadata>
     return { texts: clusterTexts, textIds: clusterTextIds, centroid: c.centroid, reducedPoints: c.reducedPoints };
   });
 
-  const namedClusters = await nameClusters(clustersWithTexts, { cumulative, context });
+  const namedClusters = await nameClusters(clustersWithTexts, { cumulative, context, mongoDb });
 
   if (mongoDb && mongoCollection && pcaModel) {
     await storeToMongo(mongoDb, mongoCollection, pcaModel, namedClusters, storeReducedDimensions);
