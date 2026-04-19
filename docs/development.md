@@ -19,7 +19,9 @@ Before running tests or a self-hosted instance, you must configure your Pinecone
 
 You need to provide your `PINECONE_API_KEY`. The `PINECONE_INDEX` can be optional depending on how you invoke the library, but it is required if your code looks for it.
 
-For generating content with Gemma models (like Gemma 3 or Gemma 4), you also need to provide `GEMINI_API_KEY`.
+For generating content with Gemma models (like Gemma 3 or Gemma 4) or Gemini models, you also need to provide `GEMINI_API_KEY`.
+
+For any feature that persists data to MongoDB (embeddings, clusters, features, evaluations, performance results), you must provide `MONGO_URI`.
 
 ### Local Development / Self-Hosted
 When running your own instance (e.g. standard Node.js server), set the variables in your environment:
@@ -28,10 +30,15 @@ When running your own instance (e.g. standard Node.js server), set the variables
 export PINECONE_API_KEY="your-api-key"
 export PINECONE_INDEX="your-index-name"
 export GEMINI_API_KEY="your-gemini-api-key"
+export MONGO_URI="mongodb+srv://user:password@cluster.mongodb.net/"
 ```
 
 ### Cloud Deployment (Netlify)
-If you deploy using Netlify Serverless Functions, ensure these environment variables are set inside the Netlify Dashboard -> Site settings -> Environment variables.
+If you deploy using Netlify Serverless Functions, ensure these environment variables are set inside the Netlify Dashboard -> Site settings -> Environment variables:
+
+- `PINECONE_API_KEY`
+- `GEMINI_API_KEY`
+- `MONGO_URI`
 
 By default, the deployed serverless functions include standard CORS headers (e.g. `Access-Control-Allow-Origin: *`). This allows cross-domain frontend applications to make API requests directly to your Netlify endpoints.
 

@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 export const handler: Handler = async (event) => {
-  console.log(`[features function] Received ${event.httpMethod} request`);
+  console.log(`[assign-clusters function] Received ${event.httpMethod} request`);
 
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -18,7 +18,7 @@ export const handler: Handler = async (event) => {
   }
 
   if (event.httpMethod !== 'POST') {
-    console.warn(`[features function] Invalid method: ${event.httpMethod}`);
+    console.warn(`[assign-clusters function] Invalid method: ${event.httpMethod}`);
     return {
       statusCode: 405,
       headers: corsHeaders,
@@ -28,12 +28,12 @@ export const handler: Handler = async (event) => {
 
   try {
     const bodyText = event.body || '{}';
-    console.log(`[features function] Parsing request body... length: ${bodyText.length} characters`);
+    console.log(`[assign-clusters function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { texts, categoryId } = parsedBody;
+    const { texts, mongoDb, mongoCollection } = parsedBody;
 
     if (!texts || !Array.isArray(texts)) {
-      console.warn(`[features function] Validation failed: texts array is required.`);
+      console.warn(`[assign-clusters function] Validation failed: texts array is required.`);
       return {
         statusCode: 400,
         headers: corsHeaders,
@@ -41,25 +41,23 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    if (!categoryId) {
-      console.warn(`[features function] Validation failed: categoryId is required.`);
+    if (!mongoDb || !mongoCollection) {
+      console.warn(`[assign-clusters function] Validation failed: mongoDb and mongoCollection are required.`);
       return {
         statusCode: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'categoryId is required' })
+        body: JSON.stringify({ error: 'mongoDb and mongoCollection are required' })
       };
     }
 
-    console.log(`[features function] Category Id: ${categoryId}`);
-
-    console.log(`[features function] Validation passed. Delegating ${texts.length} texts to background function...`);
+    console.log(`[assign-clusters function] Validation passed. Delegating to background function...`);
 
     // Determine the host for triggering the background function
     const host = event.headers.host;
     const protocol = host?.includes('localhost') ? 'http' : 'https';
-    const backgroundUrl = `${protocol}://${host}/.netlify/functions/features-background`;
+    const backgroundUrl = `${protocol}://${host}/.netlify/functions/assign-clusters-background`;
 
-    console.log(`[features function] Triggering background function at: ${backgroundUrl}`);
+    console.log(`[assign-clusters function] Triggering background function at: ${backgroundUrl}`);
 
     // Trigger the background function asynchronously. We must await the request being sent successfully
     // before returning 202, otherwise the serverless function execution container could freeze and kill the request.
@@ -71,9 +69,9 @@ export const handler: Handler = async (event) => {
         },
         body: bodyText
       });
-      console.log(`[features function] Background function triggered successfully. Returning 202 Accepted.`);
+      console.log(`[assign-clusters function] Background function triggered successfully. Returning 202 Accepted.`);
     } catch (err) {
-      console.error(`[features function] Error triggering background function:`, err);
+      console.error(`[assign-clusters function] Error triggering background function:`, err);
       return {
         statusCode: 500,
         headers: corsHeaders,
@@ -84,12 +82,12 @@ export const handler: Handler = async (event) => {
     return {
       statusCode: 202,
       headers: corsHeaders,
-      body: JSON.stringify({ message: 'Accepted. Features job has been triggered in the background.' })
+      body: JSON.stringify({ message: 'Accepted. Assign clusters job has been triggered in the background.' })
     };
 
   } catch (error: unknown) {
     const err = error as Error;
-    console.error(`[features function] Uncaught error during validation:`, error);
+    console.error(`[assign-clusters function] Uncaught error during validation:`, error);
     return {
       statusCode: 500,
       headers: corsHeaders,

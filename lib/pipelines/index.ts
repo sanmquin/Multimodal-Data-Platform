@@ -1,3 +1,3 @@
-export * from './featurePipeline';
+export * from './trainFeaturesPipeline';
 export * from './featureInference';
 export * from './explainPerformance';
