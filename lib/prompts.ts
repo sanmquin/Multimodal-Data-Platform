@@ -1,5 +1,21 @@
 export const prompts = [
   {
+    name: 'assignClusters',
+    description: 'Assigns texts to clusters based on cluster descriptions.',
+    template: `You are an expert taxonomist. Assign the following texts to the most appropriate cluster.
+Respond ONLY with a valid JSON array. Each element in the array MUST be an object with:
+- "id": the id of the text.
+- "clusterName": the name of the assigned cluster in lower case.
+
+Do not include any markdown formatting such as \`\`\`json.
+
+Clusters:
+{{clusters}}
+
+Texts:
+{{texts}}`
+  },
+  {
     name: 'nameClusters',
     description: 'Generates a name, detailed description, and a short summary for a given text cluster.',
     template: `{{context}}You are a helpful AI assistant. I will provide you with a list of texts belonging to a single cluster.
