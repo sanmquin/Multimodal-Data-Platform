@@ -72,6 +72,25 @@ Features:
 
 Texts:
 {{texts}}`
+  },
+  {
+    name: 'aggregateFeatures',
+    description: 'Aggregates features from multiple categories into a single MECE list of features centered around a specific cluster.',
+    template: `You are an expert taxonomist and feature extraction AI. Review the following features extracted from multiple categories and the target cluster description.
+Please aggregate them into a Mutually Exclusive, Collectively Exhaustive (MECE) set of features centered around the provided cluster.
+You may merge similar features or split broad features.
+
+Respond ONLY with a valid JSON array. Each element in the array MUST be an object with:
+- "name": A concise name for the feature.
+- "description": A detailed explanation of the feature.
+
+Do not include any markdown formatting such as \`\`\`json.
+
+Target Cluster:
+{{clusterData}}
+
+Input Features:
+{{featuresData}}`
   }
 ];
 
