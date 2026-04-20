@@ -99,5 +99,21 @@ export async function aggregateFeatures(options: AggregateFeaturesOptions): Prom
     summary: targetCluster.summary
   };
 
-  return generateAggregatedFeatures(clusterData, featuresData, mongoDb);
+  const aggregatedFeatures = await generateAggregatedFeatures(clusterData, featuresData, mongoDb);
+
+  const latestAggregatedFeature = await FeatureModel.findOne({ clusterId }).sort({ version: -1 }).lean();
+  const nextVersion = latestAggregatedFeature ? (latestAggregatedFeature.version || 1) + 1 : 1;
+
+  if (aggregatedFeatures.length > 0) {
+    const featuresToInsert = aggregatedFeatures.map(feature => ({
+      clusterId,
+      version: nextVersion,
+      name: feature.name,
+      description: feature.description,
+      isClustered: true
+    }));
+    await FeatureModel.insertMany(featuresToInsert);
+  }
+
+  return aggregatedFeatures;
 }
