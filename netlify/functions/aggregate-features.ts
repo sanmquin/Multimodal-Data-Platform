@@ -31,7 +31,7 @@ export const handler: Handler = async (event) => {
     const bodyText = event.body || '{}';
     console.log(`[aggregate-features function] Parsing request body... length: ${bodyText.length} characters`);
     const parsedBody = JSON.parse(bodyText);
-    const { categoryIds, clusterId, mongoCollection } = parsedBody;
+    const { categoryIds, clusterId, mongoCollection, clustersMongoCollection, featuresMongoCollection } = parsedBody;
     const mongoDb = parsedBody.mongoDb?.toLowerCase();
 
     if (!categoryIds || !Array.isArray(categoryIds) || categoryIds.length === 0) {
@@ -67,7 +67,9 @@ export const handler: Handler = async (event) => {
       categoryIds,
       clusterId,
       mongoDb,
-      mongoCollection
+      mongoCollection,
+      clustersMongoCollection,
+      featuresMongoCollection
     });
 
     console.log(`[aggregate-features function] Completed aggregating ${features.length} features.`);

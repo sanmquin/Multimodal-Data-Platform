@@ -9,6 +9,8 @@ export interface AggregateFeaturesOptions {
   clusterId: string;
   mongoDb: string;
   mongoCollection: string;
+  clustersMongoCollection?: string;
+  featuresMongoCollection?: string;
 }
 
 /**
@@ -75,7 +77,7 @@ async function generateAggregatedFeatures(clusterData: any, featuresData: Featur
 }
 
 export async function aggregateFeatures(options: AggregateFeaturesOptions): Promise<Feature[]> {
-  const { categoryIds, clusterId, mongoDb, mongoCollection } = options;
+  const { categoryIds, clusterId, mongoDb, mongoCollection, clustersMongoCollection, featuresMongoCollection } = options;
 
   if (!categoryIds || categoryIds.length === 0) throw new Error('categoryIds array cannot be empty');
   if (!clusterId) throw new Error('clusterId cannot be empty');
@@ -83,8 +85,11 @@ export async function aggregateFeatures(options: AggregateFeaturesOptions): Prom
   const isConnected = await connectMongoose(mongoDb);
   if (!isConnected) throw new Error('Failed to connect to MongoDB');
 
-  const { ClusterModel } = getMongooseModels(mongoCollection);
-  const { FeatureModel } = getFeatureModels(mongoCollection);
+  const targetClustersCollection = clustersMongoCollection || mongoCollection;
+  const targetFeaturesCollection = featuresMongoCollection || mongoCollection;
+
+  const { ClusterModel } = getMongooseModels(targetClustersCollection);
+  const { FeatureModel } = getFeatureModels(targetFeaturesCollection);
 
   const targetCluster = await ClusterModel.findById(clusterId).lean();
   if (!targetCluster) throw new Error(`Cluster not found for id: ${clusterId}`);
@@ -98,5 +103,25 @@ export async function aggregateFeatures(options: AggregateFeaturesOptions): Prom
     summary: targetCluster.summary
   };
 
-  return generateAggregatedFeatures(clusterData, featuresData, mongoDb);
+  const generatedFeatures = await generateAggregatedFeatures(clusterData, featuresData, mongoDb);
+  if (generatedFeatures.length > 0) {
+    let currentVersion = 1;
+    const latestFeature = await FeatureModel.findOne({ clusterId }).sort({ version: -1 });
+    if (latestFeature && latestFeature.version) {
+      currentVersion = latestFeature.version + 1;
+    }
+
+    const mappedFeatures = generatedFeatures.map(f => ({
+      clusterId,
+      isClustered: true,
+      version: currentVersion,
+      name: f.name,
+      description: f.description
+    }));
+
+    await FeatureModel.insertMany(mappedFeatures);
+    console.log(`[aggregateFeatures] Stored ${mappedFeatures.length} aggregated features to MongoDB collection: ${targetFeaturesCollection}`);
+  }
+
+  return generatedFeatures;
 }
